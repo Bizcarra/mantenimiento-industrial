@@ -1,10 +1,11 @@
-import axios from 'axios';
+ import axios from 'axios';
 
-  // Detecta si es producción leyendo las variables de entorno de Vercel
-  const API_URL = import.meta.env.VITE_API_URL || '';
+  // URL de tu Backend en Railway
+  const API_URL = 'https://mantenimiento-industrial-production.up.railway.app';
 
   export const apiClient = axios.create({
-    baseURL: API_URL ? `${API_URL}/api` : '/api',
+    // En producción usa la URL de Railway, en desarrollo local usa /api
+    baseURL: import.meta.env.DEV ? '/api' : `${API_URL}/api`,
   });
 
   // Interceptor para agregar token a las requests
