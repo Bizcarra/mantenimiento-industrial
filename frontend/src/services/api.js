@@ -42,3 +42,5 @@ export const dashboardAPI = {
   stats: () => apiClient.get('/dashboard/stats'),
   desempenioTecnicos: () => apiClient.get('/dashboard/tecnicos-desempenio'),
 };
+
+// Trigger redeploy
