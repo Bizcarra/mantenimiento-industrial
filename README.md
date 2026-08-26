@@ -144,11 +144,21 @@ npm install
 
 ```bash
 cd backend
+```
+
+**Linux/macOS:**
+```bash
 cat .env
+```
+
+**Windows (PowerShell):**
+```powershell
+Get-Content .env
 ```
 
 2. **Si no existe el archivo `.env`**, créalo:
 
+**Linux/macOS:**
 ```bash
 cat > .env << EOF
 MONGODB_URI=mongodb://localhost:27017/mantenimiento
@@ -157,6 +167,22 @@ PORT=5000
 NODE_ENV=development
 EOF
 ```
+
+**Windows (PowerShell):**
+```powershell
+@"
+MONGODB_URI=mongodb://localhost:27017/mantenimiento
+JWT_SECRET=tu_secret_jwt_muy_seguro_aqui
+PORT=5000
+NODE_ENV=development
+"@ | Out-File -Encoding UTF8 .env
+```
+
+**Windows (CMD) o cualquier editor:**
+- Abre la carpeta `backend`
+- Click derecho → Nuevo → Archivo de texto
+- Renómbralo a `.env`
+- Abre con Notepad y pega el contenido anterior
 
 3. **Edita el archivo `.env` con tus valores** (si es necesario):
 
@@ -177,7 +203,16 @@ NODE_ENV=development
 
 ```bash
 cd ../frontend
+```
+
+**Linux/macOS:**
+```bash
 cat .env
+```
+
+**Windows (PowerShell):**
+```powershell
+Get-Content .env
 ```
 
 2. **Asegúrate de que contenga:**
@@ -501,9 +536,17 @@ cd mantenimiento-industrial
 
 ### "npm install" - Conflictos de versión o módulos faltantes
 
+**Linux/macOS:**
 ```bash
-# Limpia completamente e instala de nuevo
 rm -rf node_modules package-lock.json
+npm cache clean --force
+npm install
+```
+
+**Windows (PowerShell):**
+```powershell
+Remove-Item -Recurse -Force node_modules
+Remove-Item package-lock.json
 npm cache clean --force
 npm install
 ```
@@ -512,18 +555,32 @@ npm install
 
 ### "MongoDB connection refused"
 
+**Linux/macOS:**
 ```bash
-# Asegúrate de tener MongoDB corriendo
-mongosh  # Deberías ver el prompt de MongoDB
-
-# Si no está instalado, descárgalo o usa MongoDB Atlas:
-# https://www.mongodb.com/cloud/atlas
+mongosh
+# Deberías ver el prompt de MongoDB
+# Escribe "exit" para salir
 ```
 
-**En Ubuntu/Debian:**
+**Windows (CMD o PowerShell):**
+```cmd
+mongosh
+```
+
+**Si no está instalado:**
+- Descárgalo de [mongodb.com](https://www.mongodb.com/try/download/community)
+- O usa [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) (nube, gratuito)
+
+**Para instalar en Windows:**
+- Descarga el instalador `.msi`
+- Ejecuta y sigue el asistente
+- MongoDB se instalará como servicio
+
+**Para instalar en macOS:**
 ```bash
-sudo apt-get install -y mongodb
-sudo systemctl start mongodb
+brew tap mongodb/brew
+brew install mongodb-community
+brew services start mongodb-community
 ```
 
 ### "EADDRINUSE: address already in use :::5000"
@@ -554,10 +611,15 @@ npm install
 Este es el error más común después de clonar. Verifica:
 
 1. **Backend está corriendo en puerto 5000:**
-   ```bash
-   curl http://localhost:5000/api/health
-   # Debería responder: {"status":"API funcionando correctamente"}
-   ```
+
+**Linux/macOS/Windows:**
+```bash
+curl http://localhost:5000/api/health
+# O en Windows PowerShell:
+Invoke-WebRequest http://localhost:5000/api/health
+```
+
+Debería responder: `{"status":"API funcionando correctamente"}`
 
 2. **Frontend está usando la URL correcta:**
    - Verifica que `src/services/api.js` tenga:
@@ -580,14 +642,15 @@ Este es el error más común después de clonar. Verifica:
    ```
 
 5. **Limpia caché del navegador:**
-   - Presiona `Ctrl+Shift+Del` (o `Cmd+Shift+Del` en Mac)
+   - **Windows/Linux**: Presiona `Ctrl+Shift+Del`
+   - **macOS**: Presiona `Cmd+Shift+Del`
    - Borra caché de los últimos 24 horas
    - Recarga la página
 
 ### "Cannot find module" después de clonar
 
+**Linux/macOS:**
 ```bash
-# Reinstala dependencias completamente
 cd backend
 rm -rf node_modules package-lock.json
 npm cache clean --force
@@ -599,26 +662,42 @@ npm cache clean --force
 npm install
 ```
 
+**Windows (PowerShell):**
+```powershell
+cd backend
+Remove-Item -Recurse -Force node_modules
+Remove-Item package-lock.json
+npm cache clean --force
+npm install
+
+cd ../frontend
+Remove-Item -Recurse -Force node_modules
+Remove-Item package-lock.json
+npm cache clean --force
+npm install
+```
+
 ### Frontend muestra errores de rutas (404, rutas incorrectas)
 
 1. **Verifica que ambos servidores estén corriendo:**
    - Backend: http://localhost:5000/api/health ✅
    - Frontend: http://localhost:3000 ✅
 
-2. **Revisa la consola del navegador (F12):**
-   - Abre "Network" tab
+2. **Revisa la consola del navegador:**
+   - **Windows/Linux**: Presiona `F12` → "Network" tab
+   - **macOS**: Presiona `Cmd+Option+I` → "Network" tab
    - Los requests a `/api/*` deben ir a `localhost:5000`
    - Si ves `/5000/` en la URL, hay un problema de configuración
 
 3. **Borra caché y cookies:**
-   - Presiona `Ctrl+Shift+Del`
+   - **Windows/Linux**: `Ctrl+Shift+Del`
+   - **macOS**: `Cmd+Shift+Del`
    - Marca todo y limpia
    - Recarga la página (`Ctrl+R` o `Cmd+R`)
 
 ### Datos de prueba no aparecen
 
 ```bash
-# Ejecuta el seed nuevamente
 cd backend
 npm run seed
 ```
@@ -631,7 +710,7 @@ Verifica que los archivos tengan las extensiones correctas:
 
 Los imports también deben ser correctos:
 ```javascript
-// ✅ Correcto
+// ✅ Correcto (ES Modules)
 import express from 'express';
 export default router;
 
@@ -639,6 +718,14 @@ export default router;
 const express = require('express');
 module.exports = router;
 ```
+
+### En Windows: "node no se reconoce como comando"
+
+Node.js no está instalado o no está en el PATH:
+
+1. Descarga e instala Node.js desde [nodejs.org](https://nodejs.org/)
+2. Reinicia tu terminal/PowerShell
+3. Verifica: `node --version`
 
 ---
 

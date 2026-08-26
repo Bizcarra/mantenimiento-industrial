@@ -25,17 +25,33 @@ npm install
 ```
 
 **Si obtienes errores de versión**, limpia el cache e instala de nuevo:
+
+**Linux/macOS:**
 ```bash
 rm -rf node_modules package-lock.json
 npm cache clean --force
 npm install
 ```
 
-### Configurar variables de entorno
-Verifica que el archivo `.env` exista y esté configurado:
+**Windows (PowerShell):**
+```powershell
+Remove-Item -Recurse -Force node_modules
+Remove-Item package-lock.json
+npm cache clean --force
+npm install
+```
 
+### Configurar variables de entorno
+Verifica que el archivo `.env` exista:
+
+**Linux/macOS:**
 ```bash
 cat .env
+```
+
+**Windows (PowerShell):**
+```powershell
+Get-Content .env
 ```
 
 Debería verse así:
@@ -47,8 +63,9 @@ NODE_ENV=development
 ```
 
 **⚠️ IMPORTANTE:** Si clonaste desde el repositorio y el `.env` no está:
+
+**Linux/macOS:**
 ```bash
-# Crea el archivo .env
 cat > .env << EOF
 MONGODB_URI=mongodb://localhost:27017/mantenimiento
 JWT_SECRET=tu_secret_jwt_muy_seguro_aqui
@@ -56,6 +73,23 @@ PORT=5000
 NODE_ENV=development
 EOF
 ```
+
+**Windows (PowerShell):**
+```powershell
+@"
+MONGODB_URI=mongodb://localhost:27017/mantenimiento
+JWT_SECRET=tu_secret_jwt_muy_seguro_aqui
+PORT=5000
+NODE_ENV=development
+"@ | Out-File -Encoding UTF8 .env
+```
+
+**Windows (Alternativa - usando Notepad):**
+1. Abre la carpeta `backend` en el explorador
+2. Click derecho → Nuevo → Archivo de texto
+3. Renómbralo a `.env`
+4. Click derecho → Abrir con → Notepad
+5. Pega el contenido anterior
 
 **Si usas MongoDB en la nube (Atlas):**
 ```
@@ -66,10 +100,26 @@ MONGODB_URI=mongodb+srv://usuario:password@cluster.mongodb.net/mantenimiento
 
 Primero, **asegúrate de que MongoDB está corriendo**:
 
+**Linux/macOS:**
 ```bash
-# Prueba conexión
 mongosh
 # Si ves el prompt de MongoDB, presiona Ctrl+C para salir
+```
+
+**Windows (CMD o PowerShell):**
+```cmd
+mongosh
+```
+
+**Si no está instalado:**
+- Descárgalo de [mongodb.com](https://www.mongodb.com/try/download/community)
+- O usa [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) (nube, gratuito)
+
+**macOS (con Homebrew):**
+```bash
+brew tap mongodb/brew
+brew install mongodb-community
+brew services start mongodb-community
 ```
 
 Luego, corre el seed para crear datos de prueba:
@@ -97,7 +147,19 @@ Servidor ejecutándose en puerto 5000
 MongoDB conectado: localhost
 ```
 
-**Endpoint de prueba:** http://localhost:5000/api/health
+**Endpoint de prueba:**
+
+**Linux/macOS:**
+```bash
+curl http://localhost:5000/api/health
+```
+
+**Windows (PowerShell):**
+```powershell
+Invoke-WebRequest http://localhost:5000/api/health
+```
+
+Debería responder: `{"status":"API funcionando correctamente"}`
 
 ---
 
@@ -112,8 +174,18 @@ npm install
 ```
 
 **Si tienes errores similares al backend:**
+
+**Linux/macOS:**
 ```bash
 rm -rf node_modules package-lock.json
+npm cache clean --force
+npm install
+```
+
+**Windows (PowerShell):**
+```powershell
+Remove-Item -Recurse -Force node_modules
+Remove-Item package-lock.json
 npm cache clean --force
 npm install
 ```
