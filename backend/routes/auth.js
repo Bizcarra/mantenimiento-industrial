@@ -84,4 +84,17 @@ router.get('/me', authMiddleware, async (req, res) => {
   }
 });
 
+// Obtener todos los técnicos (solo admin)
+router.get('/tecnicos', authMiddleware, async (req, res) => {
+  try {
+    const tecnicos = await User.find(
+      { rol: 'tecnico', activo: true },
+      'nombre email area'
+    ).sort({ nombre: 1 });
+    res.json(tecnicos);
+  } catch (error) {
+    res.status(500).json({ mensaje: error.message });
+  }
+});
+
 export default router;

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { ticketsAPI } from '../services/api';
+import { ModalAsignarTecnico } from '../components/ModalAsignarTecnico';
 import styles from './TicketDetalle.module.css';
 
 export const TicketDetalle = () => {
@@ -14,6 +15,7 @@ export const TicketDetalle = () => {
   const [nuevoEstado, setNuevoEstado] = useState('');
   const [nuevaPrioridad, setNuevaPrioridad] = useState('');
   const [solucion, setSolucion] = useState('');
+  const [modalAbierto, setModalAbierto] = useState(false);
 
   useEffect(() => {
     cargarDetalle();
@@ -62,15 +64,15 @@ export const TicketDetalle = () => {
     }
   };
 
-  const handleAsignarTecnico = async () => {
-    const tecnicoId = prompt('Ingresa el ID del técnico:');
-    if (tecnicoId) {
-      try {
-        await ticketsAPI.asignar(id, tecnicoId);
-        cargarDetalle();
-      } catch (error) {
-        console.error('Error al asignar técnico:', error);
-      }
+  const handleAsignarTecnico = async (tecnicoId, tecnicoNombre) => {
+    try {
+      const response = await ticketsAPI.asignar(id, tecnicoId);
+      // Actualizar el estado del ticket directamente con la respuesta
+      setTicket(response.data.ticket);
+      cargarDetalle();
+    } catch (error) {
+      console.error('Error al asignar técnico:', error);
+      alert('Error al asignar técnico: ' + (error.response?.data?.mensaje || error.message));
     }
   };
 
@@ -184,7 +186,10 @@ export const TicketDetalle = () => {
                     </button>
                   </div>
 
-                  <button onClick={handleAsignarTecnico} className={styles.botonAccion}>
+                  <button
+                    onClick={() => setModalAbierto(true)}
+                    className={styles.botonAccion}
+                  >
                     {ticket.tecnicoAsignado ? 'Cambiar Técnico' : 'Asignar Técnico'}
                   </button>
                 </>
@@ -243,6 +248,13 @@ export const TicketDetalle = () => {
           )}
         </div>
       </div>
+
+      <ModalAsignarTecnico
+        isOpen={modalAbierto}
+        onClose={() => setModalAbierto(false)}
+        onSeleccionar={handleAsignarTecnico}
+        tecnicoActual={ticket?.tecnicoAsignado?._id}
+      />
     </div>
   );
 };

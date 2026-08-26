@@ -29,6 +29,11 @@ export const ticketsAPI = {
     apiClient.patch(`/tickets/${id}/finalizacion`, { descripcionSolucion }),
 };
 
+// Endpoints de usuarios
+export const usuariosAPI = {
+  obtenerTecnicos: () => apiClient.get('/auth/tecnicos'),
+};
+
 // Endpoints de dashboard
 export const dashboardAPI = {
   stats: () => apiClient.get('/dashboard/stats'),
