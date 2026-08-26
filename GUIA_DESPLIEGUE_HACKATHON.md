@@ -144,25 +144,207 @@ Después del despliegue tendrás:
 
 ## 🆘 Troubleshooting
 
-### "La aplicación no conecta al backend"
-- Verifica que `VITE_API_URL` esté correctamente en Vercel
-- Verifica que el backend en Railway esté corriendo (ve a Deployments)
+### "La aplicación crashea segundos después de arrancar en Railway"
 
-### "Error de autenticación"
-- Verifica que `JWT_SECRET` sea igual en backend local y en Railway
-- Si cambias `JWT_SECRET` en Railway, tendrás que logout y login de nuevo
+Este es el problema más común. Railway no encuentra el punto de entrada del servidor.
 
-### "MongoDB connection error"
-- Verifica la `MONGODB_URI` en Railway
-- Verifica que tu IP esté permitida en MongoDB Atlas (Network Access)
+**Solución:**
+
+1. **Verifica que exista `Procfile` en la carpeta `backend/`:**
+   ```
+   backend/
+   ├── Procfile          ← Debe existir
+   ├── server.js
+   ├── package.json
+   └── ...
+   ```
+
+2. **Si no existe, créalo:**
+
+   **Linux/macOS:**
+   ```bash
+   echo "web: node server.js" > backend/Procfile
+   ```
+
+   **Windows (PowerShell):**
+   ```powershell
+   @"
+web: node server.js
+"@ | Out-File -Encoding UTF8 backend/Procfile
+   ```
+
+3. **Verifica que exista `railway.json` en la raíz:**
+   ```
+   mantenimiento-industrial/
+   ├── railway.json      ← Debe existir
+   ├── backend/
+   ├── frontend/
+   └── ...
+   ```
+
+4. **Si no existe, créalo:**
+
+   **Linux/macOS:**
+   ```bash
+   cat > railway.json << EOF
+{
+  "services": [
+    {
+      "name": "backend",
+      "root": "backend",
+      "startCommand": "npm start"
+    }
+  ]
+}
+EOF
+   ```
+
+   **Windows (PowerShell):**
+   ```powershell
+   @"
+{
+  "services": [
+    {
+      "name": "backend",
+      "root": "backend",
+      "startCommand": "npm start"
+    }
+  ]
+}
+"@ | Out-File -Encoding UTF8 railway.json
+   ```
+
+5. **Push los cambios a GitHub:**
+   ```bash
+   git add backend/Procfile railway.json
+   git commit -m "Add Railway configuration files"
+   git push
+   ```
+
+6. **En Railway, redeploy:**
+   - Ve a "Deployments"
+   - Click en el deploy que falló
+   - Click en "Redeploy"
+   - Espera a que termine
+
+### "MongoDB connection error en Railway"
+
+**Causa:** La IP de Railway no está permitida en MongoDB Atlas
+
+**Solución:**
+
+1. Ve a [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
+2. Click en tu cluster
+3. Ir a "Network Access"
+4. Click en "Add IP Address"
+5. Seleccionar "Allow access from anywhere" (0.0.0.0/0)
+6. Click "Confirm"
+
+**⚠️ Nota:** Esto es seguro porque estás usando autenticación (usuario/password) en la conexión.
+
+### "Error: Cannot find module 'express'" en Railway
+
+**Causa:** Las dependencias no se instalaron
+
+**Solución:**
+
+En Railway, asegúrate de que:
+1. `NODE_ENV=production` está configurado
+2. El archivo `package.json` está en la carpeta correcta (`backend/`)
+3. No hay un `.gitignore` que excluya `package.json`
+
+Verifica en Railway:
+- Ve a "Settings" → "Environment"
+- Busca `NODE_ENV` y asegúrate de que sea `production`
+
+### "Logs no aparecen en Railway"
+
+**Causa:** Los logs van a stdout pero Railway no los captura
+
+**Solución en `server.js`:**
+
+Asegúrate de que está usando `console.log` (no ficheros):
+
+```javascript
+console.log(`Servidor ejecutándose en puerto ${PORT}`);
+console.log(`MongoDB conectado`);
+```
+
+### "Frontend no conecta al backend en Railway"
+
+**Causa:** `VITE_API_URL` es incorrecto o no está configurado
+
+**Solución en Vercel:**
+
+1. Ve a tu proyecto en Vercel
+2. Click en "Settings" → "Environment Variables"
+3. Busca `VITE_API_URL`
+4. Verifica que sea exactamente la URL de tu backend en Railway:
+   ```
+   https://tu-backend-railway-url.up.railway.app
+   ```
+   (Sin `/api` al final)
+
+5. Si cambias la variable, redeploy:
+   - Ve a "Deployments"
+   - Click en "..." → "Redeploy"
+
+### "Error: connect ECONNREFUSED" en logs
+
+**Causa:** El backend no está respondiendo a peticiones
+
+**Solución:**
+
+1. Verifica que `server.js` esté escuchando en todas las interfaces:
+   ```javascript
+   app.listen(PORT, '0.0.0.0', () => {
+     console.log(`Servidor ejecutándose en puerto ${PORT}`);
+   });
+   ```
+
+2. No uses `localhost` o `127.0.0.1` (solo funciona localmente)
+
+3. Asegúrate de que `PORT` esté configurado en Railway Environment Variables
+
+### "CORS error" en el navegador
+
+**Causa:** El backend no acepta requests desde Vercel
+
+**Solución en `server.js`:**
+
+Verifica que CORS esté configurado correctamente:
+
+```javascript
+import cors from 'cors';
+
+app.use(cors({
+  origin: '*', // Permite cualquier origen (para hackathon)
+  credentials: true
+}));
+```
+
+### "Seed data no se crea automáticamente"
+
+El seed se ejecuta solo localmente. Para crear datos en Railway:
+
+1. Ve a Railway → Tu backend
+2. Click en "Console"
+3. Ejecuta:
+   ```bash
+   npm run seed
+   ```
 
 ---
 
-## 📱 Para la Hackathon
+## 📋 Checklist Final Antes de Hackathon
 
-Comparte estos links:
-- ✅ URL de Vercel (para los jueces)
-- ✅ GitHub repo (para código)
-- ✅ Demo credentials (email/password)
-
-¡Mucho éxito en la hackathon! 🚀
+- [ ] `Procfile` existe en `backend/`
+- [ ] `railway.json` existe en la raíz
+- [ ] MongoDB Atlas tiene acceso permitido (0.0.0.0/0)
+- [ ] Variables de entorno en Railway están correctas
+- [ ] Variables de entorno en Vercel están correctas
+- [ ] Frontend conecta exitosamente al backend
+- [ ] Puedo hacer login en la aplicación
+- [ ] Los datos se guardos correctamente (crear un ticket de prueba)
+- [ ] Los logs de Railway no muestran errores
+- [ ] La URL de Vercel funciona en incógnito/privado
