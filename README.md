@@ -99,7 +99,10 @@ mongosh --version # (opcional, para verificar MongoDB)
 ### 1. Clonar el repositorio
 
 ```bash
+# Clona el repositorio
 git clone https://github.com/tu-usuario/mantenimiento-industrial.git
+
+# Navega al proyecto
 cd mantenimiento-industrial
 ```
 
@@ -110,10 +113,24 @@ cd backend
 npm install
 ```
 
+**Si obtienes errores de versión o módulos faltantes:**
+```bash
+rm -rf node_modules package-lock.json
+npm cache clean --force
+npm install
+```
+
 ### 3. Instalar dependencias del Frontend
 
 ```bash
 cd ../frontend
+npm install
+```
+
+**Si tienes errores similares:**
+```bash
+rm -rf node_modules package-lock.json
+npm cache clean --force
 npm install
 ```
 
@@ -123,14 +140,25 @@ npm install
 
 ### Backend - Variables de Entorno
 
-1. Copia el archivo `.env.example` a `.env`:
+1. **Si clonaste desde el repositorio**, verifica que el archivo `.env` exista:
 
 ```bash
 cd backend
-cp .env.example .env
+cat .env
 ```
 
-2. Edita el archivo `.env` con tus valores:
+2. **Si no existe el archivo `.env`**, créalo:
+
+```bash
+cat > .env << EOF
+MONGODB_URI=mongodb://localhost:27017/mantenimiento
+JWT_SECRET=tu_secret_jwt_muy_seguro_aqui
+PORT=5000
+NODE_ENV=development
+EOF
+```
+
+3. **Edita el archivo `.env` con tus valores** (si es necesario):
 
 ```env
 MONGODB_URI=mongodb://localhost:27017/mantenimiento
@@ -140,30 +168,38 @@ NODE_ENV=development
 ```
 
 **Opciones de MongoDB:**
-
 - **Local**: `mongodb://localhost:27017/mantenimiento`
 - **Atlas (Cloud)**: `mongodb+srv://usuario:password@cluster.mongodb.net/mantenimiento`
 
 ### Frontend - Variables de Entorno
 
-1. Copia el archivo `.env.example`:
+1. **Verifica que el archivo `.env` exista**:
 
 ```bash
-cd frontend
-cp .env.example .env.local
+cd ../frontend
+cat .env
 ```
 
-2. Verifica que contenga:
+2. **Asegúrate de que contenga:**
 
 ```env
 VITE_API_URL=http://localhost:5000
 ```
 
+⚠️ **IMPORTANTE:** El frontend debe usar `/api` como baseURL en `src/services/api.js`:
+```javascript
+export const apiClient = axios.create({
+  baseURL: '/api',
+});
+```
+
+Esto permite que el proxy de Vite redirija correctamente al backend.
+
 ---
 
 ## 🚀 Ejecución
 
-### Asegúrate de que MongoDB esté corriendo
+### Paso 0: Asegúrate de que MongoDB esté corriendo
 
 ```bash
 # Si MongoDB está instalado localmente
@@ -172,6 +208,10 @@ mongosh
 # Deberías ver el prompt de MongoDB
 # Escribe "exit" para salir
 ```
+
+**Si no está instalado:**
+- Descárgalo de [mongodb.com](https://www.mongodb.com/try/download/community)
+- O usa [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) (nube, gratuito)
 
 ### Terminal 1 - Backend
 
@@ -183,22 +223,16 @@ npm run dev
 Verás:
 ```
 Servidor ejecutándose en puerto 5000
-MongoDB conectado
+MongoDB conectado: localhost
 ```
 
-### Terminal 2 - Frontend
-
+**Verifica que funciona:**
 ```bash
-cd frontend
-npm run dev
+curl http://localhost:5000/api/health
+# Respuesta: {"status":"API funcionando correctamente"}
 ```
 
-Verás:
-```
-➜  Local:   http://localhost:3000/
-```
-
-### Terminal 3 - Inicializar Base de Datos (Primera vez)
+### Terminal 2 - Inicializar Base de Datos (Primera vez)
 
 ```bash
 cd backend
@@ -212,13 +246,27 @@ Verás:
 ✓ Base de datos inicializada exitosamente
 ```
 
+### Terminal 3 - Frontend
+
+```bash
+cd frontend
+npm run dev
+```
+
+Verás:
+```
+➜  Local:   http://localhost:3000/
+➜  press h + enter to show help
+```
+
 ### Acceder a la Aplicación
 
 Abre tu navegador en:
-
 ```
 http://localhost:3000
 ```
+
+✅ **Debería funcionar sin errores 404**
 
 ---
 
@@ -443,40 +491,129 @@ git commit -m "test: agregar tests de autenticación"
 
 ## 🐛 Troubleshooting
 
+### "Git Clone" - Repositorio no encontrado
+
+```bash
+# Asegúrate de reemplazar con la URL correcta de tu repositorio
+git clone https://github.com/tu-usuario/tu-repositorio.git
+cd mantenimiento-industrial
+```
+
+### "npm install" - Conflictos de versión o módulos faltantes
+
+```bash
+# Limpia completamente e instala de nuevo
+rm -rf node_modules package-lock.json
+npm cache clean --force
+npm install
+```
+
+**Hazlo en ambas carpetas (backend y frontend) si es necesario.**
+
 ### "MongoDB connection refused"
 
 ```bash
-# Asegúrate de que MongoDB esté corriendo
-mongosh
+# Asegúrate de tener MongoDB corriendo
+mongosh  # Deberías ver el prompt de MongoDB
 
-# Si no está instalado, descárgalo de mongodb.com
-# O usa MongoDB Atlas (cloud)
+# Si no está instalado, descárgalo o usa MongoDB Atlas:
+# https://www.mongodb.com/cloud/atlas
+```
+
+**En Ubuntu/Debian:**
+```bash
+sudo apt-get install -y mongodb
+sudo systemctl start mongodb
 ```
 
 ### "EADDRINUSE: address already in use :::5000"
 
-```bash
-# El puerto 5000 está en uso
-# Opción 1: Cierra la otra aplicación
-# Opción 2: Cambia el puerto en .env
+El puerto 5000 está en uso. Tienes dos opciones:
+
+**Opción 1:** Cierra la otra aplicación que usa el puerto
+
+**Opción 2:** Cambia el puerto en `.env`:
+```
 PORT=5001
 ```
 
-### "Module not found: axios"
+Luego actualiza el frontend en `.env`:
+```
+VITE_API_URL=http://localhost:5001
+```
+
+### "Module not found: axios" o similar
 
 ```bash
-# Falta instalar dependencias
-cd frontend
+# Ejecuta en la carpeta que falta (backend o frontend)
 npm install
 ```
 
-### "Cannot find module 'express'"
+### "Error al cargar tickets: 404" o "Cannot GET /api/tickets"
+
+Este es el error más común después de clonar. Verifica:
+
+1. **Backend está corriendo en puerto 5000:**
+   ```bash
+   curl http://localhost:5000/api/health
+   # Debería responder: {"status":"API funcionando correctamente"}
+   ```
+
+2. **Frontend está usando la URL correcta:**
+   - Verifica que `src/services/api.js` tenga:
+   ```javascript
+   export const apiClient = axios.create({
+     baseURL: '/api',  // ← Debe ser '/api', NO 'http://localhost:5000'
+   });
+   ```
+
+3. **Vite está ejecutándose en puerto 3000:**
+   - Verifica que veas en terminal:
+   ```bash
+   ➜  Local:   http://localhost:3000/
+   ```
+
+4. **CORS está habilitado en backend:**
+   - Verifica que `server.js` tenga:
+   ```javascript
+   app.use(cors());
+   ```
+
+5. **Limpia caché del navegador:**
+   - Presiona `Ctrl+Shift+Del` (o `Cmd+Shift+Del` en Mac)
+   - Borra caché de los últimos 24 horas
+   - Recarga la página
+
+### "Cannot find module" después de clonar
 
 ```bash
-# Falta instalar dependencias
+# Reinstala dependencias completamente
 cd backend
+rm -rf node_modules package-lock.json
+npm cache clean --force
+npm install
+
+cd ../frontend
+rm -rf node_modules package-lock.json
+npm cache clean --force
 npm install
 ```
+
+### Frontend muestra errores de rutas (404, rutas incorrectas)
+
+1. **Verifica que ambos servidores estén corriendo:**
+   - Backend: http://localhost:5000/api/health ✅
+   - Frontend: http://localhost:3000 ✅
+
+2. **Revisa la consola del navegador (F12):**
+   - Abre "Network" tab
+   - Los requests a `/api/*` deben ir a `localhost:5000`
+   - Si ves `/5000/` en la URL, hay un problema de configuración
+
+3. **Borra caché y cookies:**
+   - Presiona `Ctrl+Shift+Del`
+   - Marca todo y limpia
+   - Recarga la página (`Ctrl+R` o `Cmd+R`)
 
 ### Datos de prueba no aparecen
 
@@ -484,6 +621,23 @@ npm install
 # Ejecuta el seed nuevamente
 cd backend
 npm run seed
+```
+
+### "ReferenceError: export is not defined"
+
+Verifica que los archivos tengan las extensiones correctas:
+- Backend: `.js`
+- Frontend: `.jsx` para componentes React
+
+Los imports también deben ser correctos:
+```javascript
+// ✅ Correcto
+import express from 'express';
+export default router;
+
+// ❌ Incorrecto (CommonJS)
+const express = require('express');
+module.exports = router;
 ```
 
 ---
