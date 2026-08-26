@@ -76,7 +76,7 @@ export const Tickets = () => {
     <div className={styles.container}>
       <div className={styles.header}>
         <h1>Gestión de Tickets</h1>
-        {usuario?.rol !== 'admin' && (
+        {usuario?.rol === 'solicitante' && (
           <button
             className={styles.botonCrear}
             onClick={() => setMostrarForm(!mostrarForm)}
