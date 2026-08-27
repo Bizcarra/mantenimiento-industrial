@@ -27,7 +27,7 @@ export const manejarError = (error, req, res, next) => {
   const { estado, mensaje } = obtenerErrorHttp(error);
   const identificador = req.id || 'sin-id';
 
-  if (proceso.env.NODE_ENV !== 'test' && estado >= 500 && process.env.NODE_ENV === 'production') {
+  if (process.env.NODE_ENV !== 'test' && estado >= 500 && process.env.NODE_ENV === 'production') {
     console.error(`[${identificador}] ${error.name || 'Error'}: ${error.message}`);
   } else if (estado >= 500) {
     console.error(`[${identificador}]`, error);
