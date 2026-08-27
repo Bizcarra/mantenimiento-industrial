@@ -85,15 +85,12 @@ const ticketSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Generar número de ticket único ANTES de validar
 ticketSchema.pre('validate', async function (next) {
   if (this.isNew && !this.numeroTicket) {
     try {
       let siguienteNumero = (await this.constructor.countDocuments()) + 1;
       let numeroCandidato = `TKT-${String(siguienteNumero).padStart(5, '0')}`;
 
-      // Si se eliminó un ticket intermedio, count + 1 podría estar ocupado.
-      // Avanzamos hasta encontrar el siguiente número realmente disponible.
       while (await this.constructor.exists({ numeroTicket: numeroCandidato })) {
         siguienteNumero += 1;
         numeroCandidato = `TKT-${String(siguienteNumero).padStart(5, '0')}`;

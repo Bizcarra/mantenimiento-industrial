@@ -62,7 +62,6 @@ const origenesPermitidos = new Set([
 
 export const corsSeguro = cors({
   origin(origen, callback) {
-    // Se permiten clientes sin Origin (CLI, backend a backend y health checks).
     if (!origen || origenesPermitidos.has(origen) || esOrigenLanPermitido(origen)) {
       return callback(null, true);
     }

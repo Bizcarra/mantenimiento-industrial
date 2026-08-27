@@ -309,7 +309,6 @@ router.patch(
   (req, res, next) => guardarSolucion(req, res, next, false)
 );
 
-// La eliminación es definitiva y está reservada al administrador.
 router.delete('/:id', authMiddleware, requireRole('admin'), async (req, res, next) => {
   try {
     if (!idValido(req.params.id)) {
