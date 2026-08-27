@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import { authAPI } from '../services/api';
 
 export const AuthContext = createContext();
 
@@ -19,9 +19,7 @@ export const AuthProvider = ({ children }) => {
 
   const verificarToken = async () => {
     try {
-      const response = await axios.get('/api/auth/me', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await authAPI.me();
       setUsuario(response.data);
     } catch (error) {
       console.error('Token inválido:', error);
@@ -33,7 +31,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const login = async (email, password) => {
-    const response = await axios.post('/api/auth/login', { email, password });
+    const response = await authAPI.login(email, password);
     const { token: nuevoToken, usuario: nuevoUsuario } = response.data;
 
     setToken(nuevoToken);
@@ -43,14 +41,8 @@ export const AuthProvider = ({ children }) => {
     return nuevoUsuario;
   };
 
-  const registro = async (nombre, email, password, rol, area) => {
-    const response = await axios.post('/api/auth/registro', {
-      nombre,
-      email,
-      password,
-      rol,
-      area,
-    });
+  const registro = async (nombre, email, password, area) => {
+    const response = await authAPI.registro(nombre, email, password, area);
     const { token: nuevoToken, usuario: nuevoUsuario } = response.data;
 
     setToken(nuevoToken);

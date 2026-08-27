@@ -1,120 +1,133 @@
 import express from 'express';
+import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
-import { authMiddleware } from '../middleware/auth.js';
+import { authMiddleware, requireRole } from '../middleware/auth.js';
+import { limiteAutenticacion, limiteCuenta } from '../middleware/security.js';
 
 const router = express.Router();
+const JWT_ISSUER = process.env.JWT_ISSUER || 'mantenimiento-industrial-api';
+const JWT_AUDIENCE = process.env.JWT_AUDIENCE || 'mantenimiento-industrial-web';
+const EMAIL_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const HASH_COMPARACION = '$2a$12$qKwPAhydutCdnSbePY4fFub3FCoyZPLw1mdhvE.6pLD8tEpDVKcae';
 
-// Registro
-router.post('/registro', async (req, res) => {
+const crearToken = (usuario) =>
+  jwt.sign(
+    { ver: usuario.tokenVersion || 0 },
+    process.env.JWT_SECRET,
+    {
+      algorithm: 'HS256',
+      subject: usuario._id.toString(),
+      issuer: JWT_ISSUER,
+      audience: JWT_AUDIENCE,
+      expiresIn: process.env.JWT_EXPIRES_IN || '8h',
+    }
+  );
+
+const passwordSegura = (password) =>
+  typeof password === 'string' &&
+  password.length >= 10 &&
+  Buffer.byteLength(password, 'utf8') <= 72;
+
+// El alta pública está cerrada por defecto. El administrador crea usuarios desde /api/users.
+router.post('/registro', limiteAutenticacion, limiteCuenta, async (req, res, next) => {
   try {
-    const { nombre, email, password, area } = req.body || {};
+    if (process.env.ALLOW_PUBLIC_REGISTRATION !== 'true') {
+      return res.status(403).json({ mensaje: 'El registro público está deshabilitado' });
+    }
 
+    const { nombre, email, password, area } = req.body || {};
     if (
       typeof nombre !== 'string' ||
       !nombre.trim() ||
+      nombre.trim().length > 120 ||
       typeof email !== 'string' ||
-      !/^\S+@\S+\.\S+$/.test(email.trim()) ||
-      typeof password !== 'string' ||
-      !password
+      email.length > 254 ||
+      !EMAIL_VALIDO.test(email.trim()) ||
+      !passwordSegura(password) ||
+      (area !== undefined && area !== null && (typeof area !== 'string' || area.length > 100))
     ) {
-      return res.status(400).json({ mensaje: 'Nombre, email y contraseña válidos son obligatorios' });
-    }
-    if (password.length < 6) {
-      return res.status(400).json({ mensaje: 'La contraseña debe tener al menos 6 caracteres' });
+      return res.status(400).json({
+        mensaje: 'Los datos no son válidos. La contraseña debe tener entre 10 y 72 bytes.',
+      });
     }
 
     const emailNormalizado = email.trim().toLowerCase();
-
-    // Validar que el usuario no exista
-    const usuarioExistente = await User.findOne({ email: emailNormalizado });
-    if (usuarioExistente) {
-      return res.status(400).json({ mensaje: 'El email ya está registrado' });
+    if (await User.exists({ email: emailNormalizado })) {
+      return res.status(409).json({ mensaje: 'No fue posible registrar el usuario' });
     }
 
-    // Crear nuevo usuario
-    const nuevoUsuario = new User({
+    const usuario = await User.create({
       nombre: nombre.trim(),
       email: emailNormalizado,
       password,
       rol: 'solicitante',
-      area: area || null,
+      area: area?.trim() || null,
     });
-
-    await nuevoUsuario.save();
-
-    const token = jwt.sign(
-      { id: nuevoUsuario._id, email: nuevoUsuario.email, rol: nuevoUsuario.rol },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
 
     res.status(201).json({
       mensaje: 'Usuario registrado exitosamente',
-      token,
-      usuario: nuevoUsuario.toJSON(),
+      token: crearToken(usuario),
+      usuario,
     });
   } catch (error) {
-    res.status(500).json({ mensaje: error.message });
+    next(error);
   }
 });
 
-// Login
-router.post('/login', async (req, res) => {
+router.post('/login', limiteAutenticacion, limiteCuenta, async (req, res, next) => {
   try {
     const { email, password } = req.body || {};
-
-    if (typeof email !== 'string' || !email.trim() || typeof password !== 'string' || !password) {
+    if (
+      typeof email !== 'string' ||
+      !email.trim() ||
+      email.length > 254 ||
+      typeof password !== 'string' ||
+      !password ||
+      Buffer.byteLength(password, 'utf8') > 72
+    ) {
       return res.status(401).json({ mensaje: 'Credenciales inválidas' });
     }
 
-    const usuario = await User.findOne({ email: email.trim().toLowerCase() });
-    if (!usuario || !usuario.activo) {
+    const usuario = await User.findOne({ email: email.trim().toLowerCase() })
+      .select('+password +tokenVersion');
+    const passwordValida = usuario
+      ? await usuario.comparePassword(password)
+      : await bcrypt.compare(password, HASH_COMPARACION);
+
+    if (!usuario || !usuario.activo || !passwordValida) {
       return res.status(401).json({ mensaje: 'Credenciales inválidas' });
     }
-
-    const esValida = await usuario.comparePassword(password);
-    if (!esValida) {
-      return res.status(401).json({ mensaje: 'Credenciales inválidas' });
-    }
-
-    const token = jwt.sign(
-      { id: usuario._id, email: usuario.email, rol: usuario.rol },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
 
     res.json({
       mensaje: 'Login exitoso',
-      token,
+      token: crearToken(usuario),
       usuario: usuario.toJSON(),
     });
   } catch (error) {
-    res.status(500).json({ mensaje: error.message });
+    next(error);
   }
 });
 
-// Obtener usuario actual
-router.get('/me', authMiddleware, async (req, res) => {
+router.get('/me', authMiddleware, async (req, res, next) => {
   try {
     const usuario = await User.findById(req.usuario.id);
     if (!usuario) return res.status(404).json({ mensaje: 'Usuario no encontrado' });
-    res.json(usuario.toJSON());
+    res.json(usuario);
   } catch (error) {
-    res.status(500).json({ mensaje: error.message });
+    next(error);
   }
 });
 
-// Obtener todos los técnicos (solo admin)
-router.get('/tecnicos', authMiddleware, async (req, res) => {
+router.get('/tecnicos', authMiddleware, requireRole('admin'), async (req, res, next) => {
   try {
     const tecnicos = await User.find(
       { rol: 'tecnico', activo: true },
       'nombre email area'
-    ).sort({ nombre: 1 });
+    ).sort({ nombre: 1 }).limit(200);
     res.json(tecnicos);
   } catch (error) {
-    res.status(500).json({ mensaje: error.message });
+    next(error);
   }
 });
 

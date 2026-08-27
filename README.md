@@ -271,7 +271,7 @@ curl http://localhost:5000/api/health
 
 ```bash
 cd backend
-npm run seed
+npm run seed -- --confirm-reset-local-data
 ```
 
 Verás:
@@ -408,7 +408,7 @@ El seed crea automáticamente 5 usuarios. Úsalos para probar:
 
 ```bash
 npm run dev      # Inicia con nodemon (auto-reload)
-npm run seed     # Carga datos de prueba
+npm run seed -- --confirm-reset-local-data  # Borra y carga datos de prueba locales
 npm start        # Inicia en modo producción
 ```
 
@@ -635,11 +635,9 @@ Debería responder: `{"status":"API funcionando correctamente"}`
    ➜  Local:   http://localhost:3000/
    ```
 
-4. **CORS está habilitado en backend:**
-   - Verifica que `server.js` tenga:
-   ```javascript
-   app.use(cors());
-   ```
+4. **CORS está restringido en backend:**
+   - Desarrollo local permite `http://localhost:3000`.
+   - En producción configura `CORS_ORIGINS` con la URL exacta del frontend.
 
 5. **Limpia caché del navegador:**
    - **Windows/Linux**: Presiona `Ctrl+Shift+Del`
@@ -699,7 +697,7 @@ npm install
 
 ```bash
 cd backend
-npm run seed
+npm run seed -- --confirm-reset-local-data
 ```
 
 ### "ReferenceError: export is not defined"
@@ -824,7 +822,7 @@ Este proyecto es privado y propiedad de [Tu Empresa].
 - [ ] Instalé MongoDB (local o Atlas)
 - [ ] Ejecuté `npm install` en backend y frontend
 - [ ] Creé archivos `.env` desde `.env.example`
-- [ ] Ejecuté `npm run seed` en backend
+- [ ] Ejecuté `npm run seed -- --confirm-reset-local-data` en backend local
 - [ ] Ejecuté `npm run dev` en backend (Puerto 5000)
 - [ ] Ejecuté `npm run dev` en frontend (Puerto 3000)
 - [ ] Accedí a http://localhost:3000

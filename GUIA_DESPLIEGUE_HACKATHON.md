@@ -314,14 +314,12 @@ console.log(`MongoDB conectado`);
 
 Verifica que CORS esté configurado correctamente:
 
-```javascript
-import cors from 'cors';
-
-app.use(cors({
-  origin: '*', // Permite cualquier origen (para hackathon)
-  credentials: true
-}));
+```text
+CORS_ORIGINS=https://tu-proyecto.vercel.app
 ```
+
+Configura esa variable en Railway. No uses `origin: '*'` y no modifiques el middleware
+seguro incluido en `backend/app.js`.
 
 ### "Seed data no se crea automáticamente"
 
@@ -331,8 +329,12 @@ El seed se ejecuta solo localmente. Para crear datos en Railway:
 2. Click en "Console"
 3. Ejecuta:
    ```bash
-   npm run seed
+   npm run create-admin
    ```
+
+Antes configura temporalmente `ADMIN_NAME`, `ADMIN_EMAIL` y `ADMIN_PASSWORD` en Railway.
+Después de crear la cuenta, elimina `ADMIN_PASSWORD`. No cargues el seed de demostración
+en una base de producción.
 
 ---
 

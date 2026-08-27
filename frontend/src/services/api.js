@@ -1,7 +1,8 @@
  import axios from 'axios';
 
   // URL de tu Backend en Railway
-  const API_URL = 'https://mantenimiento-industrial-production.up.railway.app';
+  const API_URL = import.meta.env.VITE_API_URL ||
+    'https://mantenimiento-industrial-production.up.railway.app';
 
   export const apiClient = axios.create({
     // En producción usa la URL de Railway, en desarrollo local usa /api
@@ -19,6 +20,24 @@
     },
     (error) => Promise.reject(error)
   );
+
+  apiClient.interceptors.response.use(
+    (response) => response,
+    (error) => {
+      if (error.response?.status === 401) {
+        localStorage.removeItem('token');
+        if (window.location.pathname !== '/login') window.location.assign('/login');
+      }
+      return Promise.reject(error);
+    }
+  );
+
+export const authAPI = {
+  login: (email, password) => apiClient.post('/auth/login', { email, password }),
+  me: () => apiClient.get('/auth/me'),
+  registro: (nombre, email, password, area) =>
+    apiClient.post('/auth/registro', { nombre, email, password, area }),
+};
 
 // Endpoints de tickets
 export const ticketsAPI = {

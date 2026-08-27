@@ -62,12 +62,14 @@ export const Login = () => {
           </button>
         </form>
 
-        <div className={styles.demo}>
+        {import.meta.env.DEV && (
+          <div className={styles.demo}>
           <p><strong>Credenciales de prueba:</strong></p>
           <p>Admin: admin@mantenimiento.com / admin123</p>
           <p>Técnico: juan@mantenimiento.com / tecnico123</p>
           <p>Solicitante: pedro@empresa.com / user123</p>
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

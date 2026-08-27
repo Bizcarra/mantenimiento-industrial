@@ -124,7 +124,7 @@ brew services start mongodb-community
 
 Luego, corre el seed para crear datos de prueba:
 ```bash
-npm run seed
+npm run seed -- --confirm-reset-local-data
 ```
 
 Deberías ver:
@@ -327,14 +327,15 @@ Este error indica que la API no responde correctamente. Verifica:
    # ➜  Local:   http://localhost:3000/
    ```
 
-4. **CORS está habilitado en backend:**
-   - Verifica que `server.js` tenga `app.use(cors());`
+4. **CORS está restringido en backend:**
+   - Desarrollo local permite `http://localhost:3000`.
+   - En producción configura `CORS_ORIGINS` con la URL exacta del frontend.
 
 ### Datos de prueba no aparecen
 ```bash
 # Ejecuta el seed nuevamente
 cd backend
-npm run seed
+npm run seed -- --confirm-reset-local-data
 ```
 
 ### "Cannot find module" después de clonar

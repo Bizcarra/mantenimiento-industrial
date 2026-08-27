@@ -1,0 +1,67 @@
+import 'dotenv/config';
+import crypto from 'node:crypto';
+import express from 'express';
+import helmet from 'helmet';
+import authRoutes from './routes/auth.js';
+import ticketsRoutes from './routes/tickets.js';
+import dashboardRoutes from './routes/dashboard.js';
+import usersRoutes from './routes/users.js';
+import {
+  corsSeguro,
+  exigirHttps,
+  limiteApi,
+  rechazarInyeccionNoSql,
+  rechazarParametrosDuplicados,
+  validarHost,
+  validarSolicitud,
+} from './middleware/security.js';
+import { manejarError, rutaNoEncontrada } from './middleware/errors.js';
+
+const app = express();
+const esProduccion = process.env.NODE_ENV === 'production';
+const trustProxy = Number.parseInt(process.env.TRUST_PROXY, 10);
+
+app.disable('x-powered-by');
+app.set('query parser', 'simple');
+app.set('trust proxy', Number.isInteger(trustProxy) ? trustProxy : esProduccion ? 1 : false);
+
+app.use((req, res, next) => {
+  req.id = crypto.randomUUID();
+  res.setHeader('X-Request-Id', req.id);
+  res.setHeader('Cache-Control', 'no-store');
+  next();
+});
+
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    strictTransportSecurity: esProduccion ? undefined : false,
+    contentSecurityPolicy: {
+      directives: {
+        upgradeInsecureRequests: esProduccion ? [] : null,
+      },
+    },
+  })
+);
+app.use(corsSeguro);
+app.use(validarHost);
+app.use(exigirHttps);
+app.use('/api', limiteApi);
+app.use(express.json({ limit: process.env.JSON_BODY_LIMIT || '20kb', strict: true }));
+app.use(validarSolicitud);
+app.use(rechazarParametrosDuplicados);
+app.use(rechazarInyeccionNoSql);
+
+app.use('/api/auth', authRoutes);
+app.use('/api/tickets', ticketsRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/users', usersRoutes);
+
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
+
+app.use(rutaNoEncontrada);
+app.use(manejarError);
+
+export default app;
