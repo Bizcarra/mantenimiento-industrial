@@ -89,8 +89,17 @@ const ticketSchema = new mongoose.Schema(
 ticketSchema.pre('validate', async function (next) {
   if (this.isNew && !this.numeroTicket) {
     try {
-      const count = await this.constructor.countDocuments();
-      this.numeroTicket = `TKT-${String(count + 1).padStart(5, '0')}`;
+      let siguienteNumero = (await this.constructor.countDocuments()) + 1;
+      let numeroCandidato = `TKT-${String(siguienteNumero).padStart(5, '0')}`;
+
+      // Si se eliminó un ticket intermedio, count + 1 podría estar ocupado.
+      // Avanzamos hasta encontrar el siguiente número realmente disponible.
+      while (await this.constructor.exists({ numeroTicket: numeroCandidato })) {
+        siguienteNumero += 1;
+        numeroCandidato = `TKT-${String(siguienteNumero).padStart(5, '0')}`;
+      }
+
+      this.numeroTicket = numeroCandidato;
     } catch (error) {
       this.numeroTicket = `TKT-${Date.now()}`;
     }

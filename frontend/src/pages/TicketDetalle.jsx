@@ -105,6 +105,10 @@ export const TicketDetalle = () => {
     return colores[estado] || '#999';
   };
 
+  const tecnicoAsignadoId = ticket.tecnicoAsignado?._id || ticket.tecnicoAsignado;
+  const puedeGestionar = usuario?.rol === 'admin' ||
+    (usuario?.rol === 'tecnico' && tecnicoAsignadoId === usuario?._id);
+
   return (
     <div className={styles.container}>
       <button onClick={() => navigate('/tickets')} className={styles.volverBtn}>
@@ -146,7 +150,7 @@ export const TicketDetalle = () => {
             )}
           </div>
 
-          {(usuario?.rol === 'admin' || usuario?.rol === 'tecnico') && (
+          {puedeGestionar && (
             <div className={styles.controles}>
               <div className={styles.grupo}>
                 <select value={nuevoEstado} onChange={(e) => setNuevoEstado(e.target.value)}>
@@ -208,7 +212,7 @@ export const TicketDetalle = () => {
           </div>
         )}
 
-        {(usuario?.rol === 'admin' || usuario?.rol === 'tecnico') && (
+        {puedeGestionar && (
           <div className={styles.panel}>
             <h3>Registrar Solución</h3>
             <textarea

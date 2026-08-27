@@ -13,11 +13,15 @@ const textoValido = (valor, minimo, maximo) =>
   typeof valor === 'string' && valor.trim().length >= minimo && valor.trim().length <= maximo;
 
 const idValido = (id) => mongoose.isValidObjectId(id);
+const filtroPresente = (valor) => valor !== undefined && valor !== '';
 
 const esPropietarioOTecnico = (usuario, ticket) => {
   if (usuario.rol === 'admin') return true;
   if (usuario.rol === 'solicitante') return ticket.solicitante?.toString() === usuario.id;
-  if (usuario.rol === 'tecnico') return ticket.tecnicoAsignado?.toString() === usuario.id;
+  if (usuario.rol === 'tecnico') {
+    return ticket.solicitante?.toString() === usuario.id ||
+      ticket.tecnicoAsignado?.toString() === usuario.id;
+  }
   return false;
 };
 
@@ -25,7 +29,7 @@ const puedeModificarTicket = (usuario, ticket) =>
   usuario.rol === 'admin' ||
   (usuario.rol === 'tecnico' && ticket.tecnicoAsignado?.toString() === usuario.id);
 
-router.post('/', authMiddleware, requireRole('solicitante'), async (req, res, next) => {
+router.post('/', authMiddleware, requireRole('admin', 'solicitante', 'tecnico'), async (req, res, next) => {
   try {
     const { titulo, descripcion, area, prioridad = 'media' } = req.body || {};
     if (
@@ -65,13 +69,13 @@ router.get('/', authMiddleware, async (req, res, next) => {
     const { estado, prioridad, area, tecnico } = req.query;
     const filtro = {};
 
-    if (estado !== undefined && (typeof estado !== 'string' || !ESTADOS.includes(estado))) {
+    if (filtroPresente(estado) && (typeof estado !== 'string' || !ESTADOS.includes(estado))) {
       return res.status(400).json({ mensaje: 'El filtro de estado no es válido' });
     }
-    if (prioridad !== undefined && (typeof prioridad !== 'string' || !PRIORIDADES.includes(prioridad))) {
+    if (filtroPresente(prioridad) && (typeof prioridad !== 'string' || !PRIORIDADES.includes(prioridad))) {
       return res.status(400).json({ mensaje: 'El filtro de prioridad no es válido' });
     }
-    if (area !== undefined && !textoValido(area, 1, 100)) {
+    if (filtroPresente(area) && !textoValido(area, 1, 100)) {
       return res.status(400).json({ mensaje: 'El filtro de área no es válido' });
     }
     if (tecnico !== undefined && (!idValido(tecnico) || req.usuario.rol !== 'admin')) {
@@ -79,7 +83,12 @@ router.get('/', authMiddleware, async (req, res, next) => {
     }
 
     if (req.usuario.rol === 'solicitante') filtro.solicitante = req.usuario.id;
-    if (req.usuario.rol === 'tecnico') filtro.tecnicoAsignado = req.usuario.id;
+    if (req.usuario.rol === 'tecnico') {
+      filtro.$or = [
+        { solicitante: req.usuario.id },
+        { tecnicoAsignado: req.usuario.id },
+      ];
+    }
     if (estado) filtro.estado = estado;
     if (prioridad) filtro.prioridad = prioridad;
     if (area) filtro.area = area.trim();
@@ -275,5 +284,27 @@ router.patch(
   requireRole('admin', 'tecnico'),
   (req, res, next) => guardarSolucion(req, res, next, false)
 );
+
+// La eliminación es definitiva y está reservada al administrador.
+router.delete('/:id', authMiddleware, requireRole('admin'), async (req, res, next) => {
+  try {
+    if (!idValido(req.params.id)) {
+      return res.status(400).json({ mensaje: 'Identificador de ticket no válido' });
+    }
+
+    const ticket = await Ticket.findById(req.params.id).select('_id numeroTicket titulo');
+    if (!ticket) return res.status(404).json({ mensaje: 'Ticket no encontrado' });
+
+    await HistoryLog.deleteMany({ ticket: ticket._id });
+    await ticket.deleteOne();
+
+    res.json({
+      mensaje: `${ticket.numeroTicket || 'Ticket'} eliminado exitosamente`,
+      ticketEliminado: ticket._id,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
 
 export default router;

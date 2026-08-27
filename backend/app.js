@@ -1,5 +1,7 @@
 import 'dotenv/config';
 import crypto from 'node:crypto';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import express from 'express';
 import helmet from 'helmet';
 import authRoutes from './routes/auth.js';
@@ -19,7 +21,10 @@ import { manejarError, rutaNoEncontrada } from './middleware/errors.js';
 
 const app = express();
 const esProduccion = process.env.NODE_ENV === 'production';
+const servirFrontend = process.env.SERVE_FRONTEND === 'true';
 const trustProxy = Number.parseInt(process.env.TRUST_PROXY, 10);
+const backendDirectory = path.dirname(fileURLToPath(import.meta.url));
+const frontendDist = path.resolve(backendDirectory, '../frontend/dist');
 
 app.disable('x-powered-by');
 app.set('query parser', 'simple');
@@ -60,6 +65,23 @@ app.use('/api/users', usersRoutes);
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
+
+if (servirFrontend) {
+  app.use(
+    express.static(frontendDist, {
+      index: false,
+      fallthrough: true,
+      etag: true,
+    })
+  );
+
+  app.get('*', (req, res, next) => {
+    if (req.path === '/api' || req.path.startsWith('/api/')) return next();
+    return res.sendFile(path.join(frontendDist, 'index.html'), (error) => {
+      if (error) next(error);
+    });
+  });
+}
 
 app.use(rutaNoEncontrada);
 app.use(manejarError);

@@ -1,36 +1,37 @@
- import axios from 'axios';
+import axios from 'axios';
 
-  // URL de tu Backend en Railway
-  const API_URL = import.meta.env.VITE_API_URL ||
-    'https://mantenimiento-industrial-production.up.railway.app';
+const backendConfigurado = import.meta.env.VITE_API_URL?.trim().replace(/\/+$/, '') ||
+  'https://mantenimiento-industrial-production.up.railway.app';
+const usarMismoOrigen = import.meta.env.DEV ||
+  import.meta.env.VITE_SAME_ORIGIN === 'true';
+const apiBaseUrl = usarMismoOrigen ? '/api' : `${backendConfigurado}/api`;
 
-  export const apiClient = axios.create({
-    // En producción usa la URL de Railway, en desarrollo local usa /api
-    baseURL: import.meta.env.DEV ? '/api' : `${API_URL}/api`,
-  });
+export const apiClient = axios.create({
+  // Desarrollo y red local comparten origen; el despliegue separado usa VITE_API_URL.
+  baseURL: apiBaseUrl,
+});
 
-  // Interceptor para agregar token a las requests
-  apiClient.interceptors.request.use(
-    (config) => {
-      const token = localStorage.getItem('token');
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-      return config;
-    },
-    (error) => Promise.reject(error)
-  );
-
-  apiClient.interceptors.response.use(
-    (response) => response,
-    (error) => {
-      if (error.response?.status === 401) {
-        localStorage.removeItem('token');
-        if (window.location.pathname !== '/login') window.location.assign('/login');
-      }
-      return Promise.reject(error);
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
-  );
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      if (window.location.pathname !== '/login') window.location.assign('/login');
+    }
+    return Promise.reject(error);
+  }
+);
 
 export const authAPI = {
   login: (email, password) => apiClient.post('/auth/login', { email, password }),
@@ -39,10 +40,10 @@ export const authAPI = {
     apiClient.post('/auth/registro', { nombre, email, password, area }),
 };
 
-// Endpoints de tickets
 export const ticketsAPI = {
   listar: (filtros = {}) => apiClient.get('/tickets', { params: filtros }),
   crear: (datos) => apiClient.post('/tickets', datos),
+  eliminar: (id) => apiClient.delete(`/tickets/${id}`),
   obtener: (id) => apiClient.get(`/tickets/${id}`),
   asignar: (id, tecnicoAsignado) => apiClient.patch(`/tickets/${id}/asignar`, { tecnicoAsignado }),
   cambiarEstado: (id, nuevoEstado) => apiClient.patch(`/tickets/${id}/estado`, { nuevoEstado }),
@@ -52,19 +53,17 @@ export const ticketsAPI = {
     apiClient.patch(`/tickets/${id}/finalizacion`, { descripcionSolucion }),
 };
 
-// Endpoints de usuarios
 export const usuariosAPI = {
   obtenerTecnicos: () => apiClient.get('/auth/tecnicos'),
   listar: (filtros = {}) => apiClient.get('/users', { params: filtros }),
+  sugerirEmail: (primerNombre, primerApellido) =>
+    apiClient.get('/users/sugerir-email', { params: { primerNombre, primerApellido } }),
   crear: (datos) => apiClient.post('/users', datos),
   actualizar: (id, datos) => apiClient.patch(`/users/${id}`, datos),
   eliminar: (id) => apiClient.delete(`/users/${id}`),
 };
 
-// Endpoints de dashboard
 export const dashboardAPI = {
   stats: () => apiClient.get('/dashboard/stats'),
   desempenioTecnicos: () => apiClient.get('/dashboard/tecnicos-desempenio'),
 };
-
-// Trigger redeploy
