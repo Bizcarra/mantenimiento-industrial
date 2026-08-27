@@ -7,6 +7,16 @@ dotenv.config();
 
 async function seedDatabase() {
   try {
+    const confirmado =
+      process.argv.includes('--confirm-reset-local-data') ||
+      process.env.ALLOW_DESTRUCTIVE_DB_TASKS === 'true';
+
+    if (process.env.NODE_ENV === 'production' || !confirmado) {
+      throw new Error(
+        'Seed bloqueado. Usa --confirm-reset-local-data fuera de producción para confirmar el borrado'
+      );
+    }
+
     await mongoose.connect(process.env.MONGODB_URI);
     console.log('Conectado a MongoDB');
 

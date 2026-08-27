@@ -19,13 +19,37 @@ PORT=5000
 NODE_ENV=development
 ```
 
+Para una configuración completa, copia `.env.example`. En producción configura además:
+
+- `CORS_ORIGINS`: URL exacta del frontend; admite varias separadas por comas.
+- `JWT_SECRET`: valor aleatorio de 32 caracteres o más.
+- `ENFORCE_HTTPS=true`: después de confirmar que el proxy envía `X-Forwarded-Proto`.
+- `TRUST_PROXY=1`: cuando Railway sea el único proxy delante de Express.
+- `ALLOW_PUBLIC_REGISTRATION=false`: las cuentas se crean desde el panel administrador.
+
+Nunca expongas `MONGODB_URI` en el frontend ni lo subas a Git. En MongoDB Atlas usa un
+usuario exclusivo con permisos únicamente sobre esta base de datos y limita el acceso de
+red a los orígenes de despliegue que realmente lo necesiten.
+
 ## Iniciar base de datos
 
 Asegúrate de tener MongoDB corriendo localmente, luego ejecuta:
 
 ```bash
-npm run seed
+npm run seed -- --confirm-reset-local-data
 ```
+
+El seed borra los datos actuales. Solo puede ejecutarse fuera de producción y exige el
+argumento de confirmación mostrado arriba.
+
+Para una base nueva en producción, crea el primer administrador sin cargar datos de prueba:
+
+```bash
+ADMIN_NAME="Administrador" ADMIN_EMAIL="admin@empresa.com" ADMIN_PASSWORD="una-clave-larga" npm run create-admin
+```
+
+En Railway configura esas tres variables temporalmente, ejecuta `npm run create-admin` y
+elimina inmediatamente `ADMIN_PASSWORD`. El comando se bloquea si ya existe un administrador.
 
 ## Ejecutar
 
@@ -39,10 +63,30 @@ Producción:
 npm start
 ```
 
+## Seguridad incorporada
+
+- Helmet y políticas CSP para cabeceras HTTP seguras.
+- CORS mediante lista explícita de orígenes.
+- Límites generales y límites estrictos para login/registro.
+- Rechazo de operadores NoSQL, claves peligrosas y parámetros duplicados.
+- JSON limitado a 20 KB y URLs limitadas a 2048 caracteres.
+- JWT firmado con algoritmo, emisor y audiencia fijos; duración predeterminada de 8 horas.
+- Invalidación de sesiones al cambiar una contraseña.
+- Autorización por rol, propietario y técnico asignado para evitar accesos por ID.
+- Errores públicos genéricos, sin trazas ni detalles de MongoDB.
+- Seed y borrado total bloqueados en producción.
+
+Ejecuta periódicamente:
+
+```bash
+npm run audit:security
+npm test
+```
+
 ## Endpoints
 
 ### Autenticación
-- `POST /api/auth/registro` - Registrar un solicitante
+- `POST /api/auth/registro` - Registro público opcional (deshabilitado por defecto)
 - `POST /api/auth/login` - Login
 - `GET /api/auth/me` - Obtener usuario actual
 

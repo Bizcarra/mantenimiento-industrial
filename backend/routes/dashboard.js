@@ -6,7 +6,7 @@ import { authMiddleware, requireRole } from '../middleware/auth.js';
 const router = express.Router();
 
 // Estadísticas generales (solo admin)
-router.get('/stats', authMiddleware, requireRole('admin'), async (req, res) => {
+router.get('/stats', authMiddleware, requireRole('admin'), async (req, res, next) => {
   try {
     const totalTickets = await Ticket.countDocuments();
     const ticketsAbiertos = await Ticket.countDocuments({ estado: 'abierto' });
@@ -18,7 +18,7 @@ router.get('/stats', authMiddleware, requireRole('admin'), async (req, res) => {
     const ticketsConResolucion = await Ticket.find({
       estado: 'resuelto',
       tiempoTranscurridoMinutos: { $ne: null },
-    });
+    }).select('tiempoTranscurridoMinutos').lean();
 
     let tiempoPromedioResolucion = 0;
     if (ticketsConResolucion.length > 0) {
@@ -59,14 +59,17 @@ router.get('/stats', authMiddleware, requireRole('admin'), async (req, res) => {
       ticketsPorArea,
     });
   } catch (error) {
-    res.status(500).json({ mensaje: error.message });
+    next(error);
   }
 });
 
 // Desempeño de técnicos (solo admin)
-router.get('/tecnicos-desempenio', authMiddleware, requireRole('admin'), async (req, res) => {
+router.get('/tecnicos-desempenio', authMiddleware, requireRole('admin'), async (req, res, next) => {
   try {
-    const tecnicos = await User.find({ rol: 'tecnico' });
+    const tecnicos = await User.find({ rol: 'tecnico', activo: true })
+      .select('nombre email')
+      .limit(200)
+      .lean();
 
     const desempenio = await Promise.all(
       tecnicos.map(async (tecnico) => {
@@ -90,7 +93,7 @@ router.get('/tecnicos-desempenio', authMiddleware, requireRole('admin'), async (
 
     res.json(desempenio);
   } catch (error) {
-    res.status(500).json({ mensaje: error.message });
+    next(error);
   }
 });
 

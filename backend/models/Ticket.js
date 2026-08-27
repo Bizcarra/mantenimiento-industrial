@@ -6,14 +6,21 @@ const ticketSchema = new mongoose.Schema(
       type: String,
       unique: true,
       sparse: true,
+      maxlength: 30,
     },
     titulo: {
       type: String,
       required: true,
+      trim: true,
+      minlength: 3,
+      maxlength: 120,
     },
     descripcion: {
       type: String,
       required: true,
+      trim: true,
+      minlength: 10,
+      maxlength: 5000,
     },
     estado: {
       type: String,
@@ -28,6 +35,9 @@ const ticketSchema = new mongoose.Schema(
     area: {
       type: String,
       required: true,
+      trim: true,
+      minlength: 2,
+      maxlength: 100,
     },
     solicitante: {
       type: mongoose.Schema.Types.ObjectId,
@@ -58,6 +68,8 @@ const ticketSchema = new mongoose.Schema(
     descripcionSolucion: {
       type: String,
       default: null,
+      trim: true,
+      maxlength: 5000,
     },
     usuarioSolucion: {
       type: mongoose.Schema.Types.ObjectId,
@@ -67,6 +79,7 @@ const ticketSchema = new mongoose.Schema(
     tiempoTranscurridoMinutos: {
       type: Number,
       default: null,
+      min: 0,
     },
   },
   { timestamps: true }

@@ -20,6 +20,7 @@ const historyLogSchema = new mongoose.Schema(
     detalles: {
       type: String,
       required: true,
+      maxlength: 1000,
     },
     datosAnteriores: mongoose.Schema.Types.Mixed,
     datosNuevos: mongoose.Schema.Types.Mixed,

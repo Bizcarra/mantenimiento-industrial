@@ -278,7 +278,8 @@ export const Usuarios = () => {
                     type="password"
                     value={formulario.password}
                     onChange={actualizarCampo}
-                    minLength={6}
+                    minLength={10}
+                    maxLength={72}
                     required={!usuarioEditado}
                     autoComplete="new-password"
                   />

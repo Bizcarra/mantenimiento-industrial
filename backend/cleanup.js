@@ -5,6 +5,12 @@ dotenv.config();
 
 async function cleanup() {
   try {
+    if (process.env.NODE_ENV === 'production' || process.env.ALLOW_DESTRUCTIVE_DB_TASKS !== 'true') {
+      throw new Error(
+        'Operación bloqueada. Solo se permite fuera de producción con ALLOW_DESTRUCTIVE_DB_TASKS=true'
+      );
+    }
+
     await mongoose.connect(process.env.MONGODB_URI);
     console.log('Conectado a MongoDB');
     
