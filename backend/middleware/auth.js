@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
+import User from '../models/User.js';
 
-export const authMiddleware = (req, res, next) => {
+export const authMiddleware = async (req, res, next) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
 
@@ -9,7 +10,17 @@ export const authMiddleware = (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.usuario = decoded;
+    const usuario = await User.findById(decoded.id).select('_id email rol activo');
+
+    if (!usuario || !usuario.activo) {
+      return res.status(401).json({ mensaje: 'Usuario inexistente o inactivo' });
+    }
+
+    req.usuario = {
+      id: usuario._id.toString(),
+      email: usuario.email,
+      rol: usuario.rol,
+    };
     next();
   } catch (error) {
     res.status(401).json({ mensaje: 'Token inválido o expirado' });

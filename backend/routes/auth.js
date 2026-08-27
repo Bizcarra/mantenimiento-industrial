@@ -8,20 +8,36 @@ const router = express.Router();
 // Registro
 router.post('/registro', async (req, res) => {
   try {
-    const { nombre, email, password, rol, area } = req.body;
+    const { nombre, email, password, area } = req.body || {};
+
+    if (
+      typeof nombre !== 'string' ||
+      !nombre.trim() ||
+      typeof email !== 'string' ||
+      !/^\S+@\S+\.\S+$/.test(email.trim()) ||
+      typeof password !== 'string' ||
+      !password
+    ) {
+      return res.status(400).json({ mensaje: 'Nombre, email y contraseña válidos son obligatorios' });
+    }
+    if (password.length < 6) {
+      return res.status(400).json({ mensaje: 'La contraseña debe tener al menos 6 caracteres' });
+    }
+
+    const emailNormalizado = email.trim().toLowerCase();
 
     // Validar que el usuario no exista
-    const usuarioExistente = await User.findOne({ email });
+    const usuarioExistente = await User.findOne({ email: emailNormalizado });
     if (usuarioExistente) {
       return res.status(400).json({ mensaje: 'El email ya está registrado' });
     }
 
     // Crear nuevo usuario
     const nuevoUsuario = new User({
-      nombre,
-      email,
+      nombre: nombre.trim(),
+      email: emailNormalizado,
       password,
-      rol: rol || 'solicitante',
+      rol: 'solicitante',
       area: area || null,
     });
 
@@ -46,10 +62,14 @@ router.post('/registro', async (req, res) => {
 // Login
 router.post('/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password } = req.body || {};
 
-    const usuario = await User.findOne({ email });
-    if (!usuario) {
+    if (typeof email !== 'string' || !email.trim() || typeof password !== 'string' || !password) {
+      return res.status(401).json({ mensaje: 'Credenciales inválidas' });
+    }
+
+    const usuario = await User.findOne({ email: email.trim().toLowerCase() });
+    if (!usuario || !usuario.activo) {
       return res.status(401).json({ mensaje: 'Credenciales inválidas' });
     }
 
@@ -78,6 +98,7 @@ router.post('/login', async (req, res) => {
 router.get('/me', authMiddleware, async (req, res) => {
   try {
     const usuario = await User.findById(req.usuario.id);
+    if (!usuario) return res.status(404).json({ mensaje: 'Usuario no encontrado' });
     res.json(usuario.toJSON());
   } catch (error) {
     res.status(500).json({ mensaje: error.message });

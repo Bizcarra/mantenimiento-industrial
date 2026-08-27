@@ -25,9 +25,14 @@ export const Navbar = () => {
           </Link>
 
           {usuario?.rol === 'admin' && (
-            <Link to="/dashboard" className={styles.link}>
-              Dashboard
-            </Link>
+            <>
+              <Link to="/dashboard" className={styles.link}>
+                Dashboard
+              </Link>
+              <Link to="/usuarios" className={styles.link}>
+                Usuarios
+              </Link>
+            </>
           )}
 
           <div className={styles.usuario}>

@@ -7,6 +7,7 @@ import { Login } from './pages/Login';
 import { Tickets } from './pages/Tickets';
 import { TicketDetalle } from './pages/TicketDetalle';
 import { Dashboard } from './pages/Dashboard';
+import { Usuarios } from './pages/Usuarios';
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
                   <Route path="/tickets" element={<Tickets />} />
                   <Route path="/tickets/:id" element={<TicketDetalle />} />
                   <Route path="/dashboard" element={<ProtectedRoute requiredRole={['admin']}><Dashboard /></ProtectedRoute>} />
+                  <Route path="/usuarios" element={<ProtectedRoute requiredRole={['admin']}><Usuarios /></ProtectedRoute>} />
                   <Route path="/" element={<Navigate to="/tickets" replace />} />
                 </Routes>
               </ProtectedRoute>
