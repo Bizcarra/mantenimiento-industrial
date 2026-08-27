@@ -16,7 +16,6 @@ const numeroEntorno = (nombre, valorPredeterminado, minimo, maximo) => {
   if (!Number.isFinite(valor)) return valorPredeterminado;
   return Math.min(Math.max(valor, minimo), maximo);
 };
-
 const origenesDesarrollo = [
   'http://localhost:3000',
   'http://127.0.0.1:3000',

@@ -19,6 +19,8 @@ export const Tickets = () => {
     estado: '',
     prioridad: '',
     area: '',
+    fechaDesde: '',
+    fechaHasta: '',
   });
 
   const [formData, setFormData] = useState({
@@ -225,28 +227,80 @@ export const Tickets = () => {
       )}
 
       <div className={styles.filtros}>
-        <select
-          value={filtros.estado}
-          onChange={(e) => setFiltros({ ...filtros, estado: e.target.value })}
-        >
-          <option value="">Todos los estados</option>
-          <option value="abierto">Abierto</option>
-          <option value="en_progreso">En Progreso</option>
-          <option value="pausado">Pausado</option>
-          <option value="resuelto">Resuelto</option>
-          <option value="cerrado">Cerrado</option>
-        </select>
+        <label className={styles.filtroCampo}>
+          <span>Estado</span>
+          <select
+            value={filtros.estado}
+            onChange={(e) => setFiltros({ ...filtros, estado: e.target.value })}
+          >
+            <option value="">Todos los estados</option>
+            <option value="abierto">Abierto</option>
+            <option value="en_progreso">En Progreso</option>
+            <option value="pausado">Pausado</option>
+            <option value="resuelto">Resuelto</option>
+            <option value="cerrado">Cerrado</option>
+          </select>
+        </label>
 
-        <select
-          value={filtros.prioridad}
-          onChange={(e) => setFiltros({ ...filtros, prioridad: e.target.value })}
+        <label className={styles.filtroCampo}>
+          <span>Prioridad</span>
+          <select
+            value={filtros.prioridad}
+            onChange={(e) => setFiltros({ ...filtros, prioridad: e.target.value })}
+          >
+            <option value="">Todas las prioridades</option>
+            <option value="baja">Baja</option>
+            <option value="media">Media</option>
+            <option value="alta">Alta</option>
+            <option value="critica">Crítica</option>
+          </select>
+        </label>
+
+        <label className={styles.filtroCampo}>
+          <span>Área</span>
+          <input
+            type="search"
+            value={filtros.area}
+            onChange={(e) => setFiltros({ ...filtros, area: e.target.value })}
+            placeholder="Todas las áreas"
+            maxLength={100}
+          />
+        </label>
+
+        <label className={styles.filtroCampo}>
+          <span>Desde</span>
+          <input
+            type="date"
+            value={filtros.fechaDesde}
+            max={filtros.fechaHasta || undefined}
+            onChange={(e) => setFiltros({ ...filtros, fechaDesde: e.target.value })}
+          />
+        </label>
+
+        <label className={styles.filtroCampo}>
+          <span>Hasta</span>
+          <input
+            type="date"
+            value={filtros.fechaHasta}
+            min={filtros.fechaDesde || undefined}
+            onChange={(e) => setFiltros({ ...filtros, fechaHasta: e.target.value })}
+          />
+        </label>
+
+        <button
+          type="button"
+          className={styles.limpiarFiltros}
+          onClick={() => setFiltros({
+            estado: '',
+            prioridad: '',
+            area: '',
+            fechaDesde: '',
+            fechaHasta: '',
+          })}
+          disabled={!Object.values(filtros).some(Boolean)}
         >
-          <option value="">Todas las prioridades</option>
-          <option value="baja">Baja</option>
-          <option value="media">Media</option>
-          <option value="alta">Alta</option>
-          <option value="critica">Crítica</option>
-        </select>
+          Limpiar filtros
+        </button>
       </div>
 
       {cargando ? (
@@ -266,7 +320,7 @@ export const Tickets = () => {
                 <span className={styles.numero}>{ticket.numeroTicket}</span>
               </div>
 
-              <p className={styles.descripcion}>{ticket.descripcion.substring(0, 100)}...</p>
+              <p className={styles.descripcion} title={ticket.descripcion}>{ticket.descripcion}</p>
 
               <div className={styles.tags}>
                 <span

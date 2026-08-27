@@ -22,3 +22,7 @@ locales. Presiona Enter para conservar la base de datos actual.
 
 MongoDB debe estar iniciado antes de abrir la aplicación. Las terminales de
 Backend y Frontend deben permanecer abiertas mientras uses el sistema.
+<<<<<<< HEAD
+=======
+
+>>>>>>> D

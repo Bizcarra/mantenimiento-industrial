@@ -100,7 +100,7 @@ npm test
 - `DELETE /api/users/:id` - Eliminar usuario sin historial asociado
 
 ### Tickets
-- `GET /api/tickets` - Listar tickets (con filtros)
+- `GET /api/tickets` - Listar tickets; admite estado, prioridad, área, `fechaDesde` y `fechaHasta`
 - `POST /api/tickets` - Crear nuevo ticket
 - `DELETE /api/tickets/:id` - Eliminar definitivamente un ticket y su historial (admin)
 - `GET /api/tickets/:id` - Obtener ticket y su historial
@@ -110,5 +110,5 @@ npm test
 - `PATCH /api/tickets/:id/solucion` - Registrar solución
 
 ### Dashboard
-- `GET /api/dashboard/stats` - Estadísticas generales (admin)
-- `GET /api/dashboard/tecnicos-desempenio` - Desempeño de técnicos (admin)
+- `GET /api/dashboard/stats` - Resúmenes, gráficos y tiempo promedio; admite rango de fechas (admin)
+- `GET /api/dashboard/tecnicos-desempenio` - Desempeño de técnicos por período (admin)

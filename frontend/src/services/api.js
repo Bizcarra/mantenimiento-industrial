@@ -39,7 +39,10 @@ export const authAPI = {
   registro: (nombre, email, password, area) =>
     apiClient.post('/auth/registro', { nombre, email, password, area }),
 };
+<<<<<<< HEAD
 
+=======
+>>>>>>> D
 export const ticketsAPI = {
   listar: (filtros = {}) => apiClient.get('/tickets', { params: filtros }),
   crear: (datos) => apiClient.post('/tickets', datos),
@@ -64,6 +67,7 @@ export const usuariosAPI = {
 };
 
 export const dashboardAPI = {
-  stats: () => apiClient.get('/dashboard/stats'),
-  desempenioTecnicos: () => apiClient.get('/dashboard/tecnicos-desempenio'),
+  stats: (filtros = {}) => apiClient.get('/dashboard/stats', { params: filtros }),
+  desempenioTecnicos: (filtros = {}) =>
+    apiClient.get('/dashboard/tecnicos-desempenio', { params: filtros }),
 };

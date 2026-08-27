@@ -13,7 +13,6 @@ const formularioInicial = {
   area: '',
   activo: true,
 };
-
 const etiquetasRol = {
   admin: 'Administrador',
   tecnico: 'Técnico',

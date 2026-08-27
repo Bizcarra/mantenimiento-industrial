@@ -210,7 +210,11 @@ try {
             -FailureMessage 'git pull fallo. Revise la conexion o los cambios locales antes de continuar.'
     }
     else {
+<<<<<<< HEAD
         Write-Host 'Paquete transferible detectado: se omite git pull.' -ForegroundColor Yellow
+=======
+        Write-Host 'Copia local sin historial Git: se omite git pull.' -ForegroundColor Yellow
+>>>>>>> D
     }
 
     Write-Step 'Instalando dependencias del backend'

@@ -4,6 +4,7 @@ import Ticket from '../models/Ticket.js';
 import User from '../models/User.js';
 import HistoryLog from '../models/HistoryLog.js';
 import { authMiddleware, requireRole } from '../middleware/auth.js';
+import { crearRangoFechas } from '../utils/dateFilters.js';
 
 const router = express.Router();
 const ESTADOS = ['abierto', 'en_progreso', 'pausado', 'resuelto', 'cerrado'];
@@ -66,8 +67,9 @@ router.post('/', authMiddleware, requireRole('admin', 'solicitante', 'tecnico'),
 
 router.get('/', authMiddleware, async (req, res, next) => {
   try {
-    const { estado, prioridad, area, tecnico } = req.query;
+    const { estado, prioridad, area, tecnico, fechaDesde, fechaHasta } = req.query;
     const filtro = {};
+    const { rango: rangoFechas, error: errorFechas } = crearRangoFechas(fechaDesde, fechaHasta);
 
     if (filtroPresente(estado) && (typeof estado !== 'string' || !ESTADOS.includes(estado))) {
       return res.status(400).json({ mensaje: 'El filtro de estado no es válido' });
@@ -81,6 +83,7 @@ router.get('/', authMiddleware, async (req, res, next) => {
     if (tecnico !== undefined && (!idValido(tecnico) || req.usuario.rol !== 'admin')) {
       return res.status(400).json({ mensaje: 'El filtro de técnico no es válido' });
     }
+    if (errorFechas) return res.status(400).json({ mensaje: errorFechas });
 
     if (req.usuario.rol === 'solicitante') filtro.solicitante = req.usuario.id;
     if (req.usuario.rol === 'tecnico') {
@@ -93,6 +96,7 @@ router.get('/', authMiddleware, async (req, res, next) => {
     if (prioridad) filtro.prioridad = prioridad;
     if (area) filtro.area = area.trim();
     if (tecnico) filtro.tecnicoAsignado = tecnico;
+    if (rangoFechas) filtro.fechaSolicitud = rangoFechas;
 
     const tickets = await Ticket.find(filtro)
       .populate('solicitante', 'nombre email')
@@ -134,9 +138,18 @@ router.get('/:id', authMiddleware, async (req, res, next) => {
 
 router.patch('/:id/asignar', authMiddleware, requireRole('admin'), async (req, res, next) => {
   try {
-    const { tecnicoAsignado } = req.body || {};
-    if (!idValido(req.params.id) || !idValido(tecnicoAsignado)) {
-      return res.status(400).json({ mensaje: 'Los identificadores enviados no son válidos' });
+    const tecnicoRecibido = req.body?.tecnicoAsignado ?? req.body?.tecnicoId;
+    const tecnicoAsignado = typeof tecnicoRecibido === 'string'
+      ? tecnicoRecibido.trim()
+      : typeof tecnicoRecibido?._id === 'string'
+        ? tecnicoRecibido._id.trim()
+        : '';
+
+    if (!idValido(req.params.id)) {
+      return res.status(400).json({ mensaje: 'El identificador del ticket no es válido' });
+    }
+    if (!idValido(tecnicoAsignado)) {
+      return res.status(400).json({ mensaje: 'Selecciona un técnico válido e intenta nuevamente' });
     }
 
     const [ticket, tecnico] = await Promise.all([
@@ -146,6 +159,11 @@ router.patch('/:id/asignar', authMiddleware, requireRole('admin'), async (req, r
 
     if (!ticket) return res.status(404).json({ mensaje: 'Ticket no encontrado' });
     if (!tecnico) return res.status(400).json({ mensaje: 'El técnico seleccionado no es válido' });
+
+    if (ticket.tecnicoAsignado?.toString() === tecnico._id.toString()) {
+      await ticket.populate('solicitante tecnicoAsignado', 'nombre email');
+      return res.json({ mensaje: `El ticket ya estaba asignado a ${tecnico.nombre}`, ticket });
+    }
 
     const tecnicoAnterior = ticket.tecnicoAsignado;
     ticket.tecnicoAsignado = tecnico._id;
@@ -182,12 +200,18 @@ router.patch('/:id/estado', authMiddleware, requireRole('admin', 'tecnico'), asy
     }
 
     const estadoAnterior = ticket.estado;
+    if (estadoAnterior === nuevoEstado) {
+      return res.json({ mensaje: 'El ticket ya tenía ese estado', ticket });
+    }
     ticket.estado = nuevoEstado;
 
-    if ((nuevoEstado === 'resuelto' || nuevoEstado === 'pausado') && !ticket.tiempoTranscurridoMinutos) {
+    if (nuevoEstado === 'resuelto') {
       ticket.tiempoTranscurridoMinutos = Math.round((new Date() - ticket.fechaSolicitud) / 60000);
+      ticket.fechaResolucion = new Date();
+    } else if (estadoAnterior === 'resuelto') {
+      ticket.tiempoTranscurridoMinutos = null;
+      ticket.fechaResolucion = null;
     }
-    if (nuevoEstado === 'resuelto') ticket.fechaResolucion = new Date();
 
     await ticket.save();
     await HistoryLog.create({

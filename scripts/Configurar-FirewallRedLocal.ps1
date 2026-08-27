@@ -40,3 +40,7 @@ catch {
     Write-Host "ERROR: $($_.Exception.Message)" -ForegroundColor Red
     exit 1
 }
+<<<<<<< HEAD
+=======
+
+>>>>>>> D

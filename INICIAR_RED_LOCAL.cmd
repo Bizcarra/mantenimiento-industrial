@@ -12,3 +12,7 @@ if not "%RESULTADO%"=="0" (
 )
 
 exit /b %RESULTADO%
+<<<<<<< HEAD
+=======
+
+>>>>>>> D

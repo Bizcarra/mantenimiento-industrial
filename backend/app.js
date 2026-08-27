@@ -25,6 +25,11 @@ const servirFrontend = process.env.SERVE_FRONTEND === 'true';
 const trustProxy = Number.parseInt(process.env.TRUST_PROXY, 10);
 const backendDirectory = path.dirname(fileURLToPath(import.meta.url));
 const frontendDist = path.resolve(backendDirectory, '../frontend/dist');
+<<<<<<< HEAD
+=======
+const coopSegura = helmet.crossOriginOpenerPolicy({ policy: 'same-origin' });
+const clusterSeguro = helmet.originAgentCluster();
+>>>>>>> D
 
 app.disable('x-powered-by');
 app.set('query parser', 'simple');
@@ -39,7 +44,11 @@ app.use((req, res, next) => {
 
 app.use(
   helmet({
+    // Estas dos cabeceras se agregan debajo únicamente en HTTPS o loopback.
+    // Los navegadores las rechazan en una IP LAN servida por HTTP.
+    crossOriginOpenerPolicy: false,
     crossOriginResourcePolicy: { policy: 'cross-origin' },
+    originAgentCluster: false,
     strictTransportSecurity: esProduccion ? undefined : false,
     contentSecurityPolicy: {
       directives: {
@@ -48,6 +57,15 @@ app.use(
     },
   })
 );
+app.use((req, res, next) => {
+  const hostLoopback = ['localhost', '127.0.0.1', '::1'].includes(req.hostname);
+  if (!req.secure && !hostLoopback) return next();
+
+  return coopSegura(req, res, (error) => {
+    if (error) return next(error);
+    return clusterSeguro(req, res, next);
+  });
+});
 app.use(corsSeguro);
 app.use(validarHost);
 app.use(exigirHttps);
