@@ -466,60 +466,25 @@ git push origin feature/mi-feature
 
 ## 🤝 Contribución
 
-### Guía para Compañeros
+¿Quieres contribuir al proyecto? Consulta nuestra **[Guía de Contribución](CONTRIBUTING.md)** donde encontrarás:
 
-1. **Clona el repositorio**
-   ```bash
-   git clone https://github.com/tu-usuario/mantenimiento-industrial.git
-   cd mantenimiento-industrial
-   ```
+- Flujo de trabajo con Git
+- Convención de commits
+- Estándares de código
+- Proceso de Code Review
+- Cómo reportar bugs y sugerir mejoras
 
-2. **Crea una rama para tu trabajo**
-   ```bash
-   git checkout develop
-   git checkout -b feature/mi-funcionalidad
-   ```
-
-3. **Realiza tus cambios**
-   ```bash
-   # Edita archivos
-   git add .
-   git commit -m "feat: descripción clara del cambio"
-   ```
-
-4. **Pushea a GitHub**
-   ```bash
-   git push origin feature/mi-funcionalidad
-   ```
-
-5. **Crea un Pull Request**
-   - Ve a GitHub
-   - Haz clic en "Pull Requests"
-   - Clic en "New Pull Request"
-   - Selecciona tu rama
-   - Describe los cambios
-   - Espera review
-
-### Convención de Commits
+**Inicio rápido:**
 
 ```bash
-# Features
-git commit -m "feat: agregar validación de email"
+# 1. Crea una rama
+git checkout -b feature/mi-funcionalidad
 
-# Fixes
-git commit -m "fix: corregir error en login"
+# 2. Haz tus cambios y commit
+git commit -m "feat: descripción del cambio"
 
-# Documentación
-git commit -m "docs: actualizar README"
-
-# Estilos
-git commit -m "style: mejorar diseño del dashboard"
-
-# Refactoring
-git commit -m "refactor: limpiar código de componente"
-
-# Tests
-git commit -m "test: agregar tests de autenticación"
+# 3. Push y crea PR
+git push origin feature/mi-funcionalidad
 ```
 
 ---
@@ -768,11 +733,12 @@ Node.js no está instalado o no está en el PATH:
 
 ## 📚 Documentación Adicional
 
-Ver la carpeta `docs/` para:
-- `ARQUITECTURA.md` - Diagramas y flujos
-- `CHECKLIST_FEATURES.md` - Validación de requisitos
-- `RESUMEN_EJECUTIVO.md` - Para presentaciones
-- `DEPENDENCIAS.md` - Stack detallado
+- **[ARQUITECTURA.md](ARQUITECTURA.md)** - Diagramas de flujo y estructura técnica
+- **[INICIO_RAPIDO.md](INICIO_RAPIDO.md)** - Guía de inicio rápido (5 minutos)
+- **[DEPENDENCIAS.md](DEPENDENCIAS.md)** - Stack tecnológico detallado
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** - Guía para contribuir al proyecto
+- **[backend/README.md](backend/README.md)** - Documentación específica del backend
+- **[frontend/README.md](frontend/README.md)** - Documentación específica del frontend
 
 ---
 

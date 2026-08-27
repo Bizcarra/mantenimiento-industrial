@@ -7,7 +7,6 @@ const usarMismoOrigen = import.meta.env.DEV ||
 const apiBaseUrl = usarMismoOrigen ? '/api' : `${backendConfigurado}/api`;
 
 export const apiClient = axios.create({
-  // Desarrollo y red local comparten origen; el despliegue separado usa VITE_API_URL.
   baseURL: apiBaseUrl,
 });
 

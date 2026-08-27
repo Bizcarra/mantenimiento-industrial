@@ -29,7 +29,6 @@ const passwordSegura = (password) =>
   password.length >= 10 &&
   Buffer.byteLength(password, 'utf8') <= 72;
 
-// El alta pública está cerrada por defecto. El administrador crea usuarios desde /api/users.
 router.post('/registro', limiteAutenticacion, limiteCuenta, async (req, res, next) => {
   try {
     if (process.env.ALLOW_PUBLIC_REGISTRATION !== 'true') {

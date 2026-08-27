@@ -38,7 +38,6 @@ const validarDatosUsuario = (
   return null;
 };
 
-// Listar y buscar usuarios.
 router.get('/', async (req, res, next) => {
   try {
     const { q = '', rol = '', activo = '' } = req.query;
@@ -72,7 +71,6 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-// Propone un identificador interno único. El administrador puede editarlo antes de guardar.
 router.get('/sugerir-email', async (req, res, next) => {
   try {
     const { primerNombre, primerApellido } = req.query;
@@ -122,7 +120,6 @@ router.get('/sugerir-email', async (req, res, next) => {
   }
 });
 
-// Crear un usuario sin iniciar sesión con la cuenta creada.
 router.post('/', async (req, res, next) => {
   try {
     const { nombre, email, password, rol = 'solicitante', area, activo = true } = req.body || {};
@@ -157,7 +154,6 @@ router.post('/', async (req, res, next) => {
   }
 });
 
-// Modificar datos, rol, estado y opcionalmente la contraseña.
 router.patch('/:id', async (req, res, next) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) {
@@ -215,7 +211,6 @@ router.patch('/:id', async (req, res, next) => {
   }
 });
 
-// Eliminar únicamente usuarios que no formen parte del historial de mantenimiento.
 router.delete('/:id', async (req, res, next) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) {

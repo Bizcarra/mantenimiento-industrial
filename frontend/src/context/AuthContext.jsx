@@ -8,7 +8,6 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [cargando, setCargando] = useState(true);
 
-  // Verificar token al cargar la app
   useEffect(() => {
     if (token) {
       verificarToken();

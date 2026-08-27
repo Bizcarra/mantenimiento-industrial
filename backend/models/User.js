@@ -59,12 +59,10 @@ userSchema.pre('save', async function (next) {
   }
 });
 
-// Método para comparar passwords
 userSchema.methods.comparePassword = async function (passwordIngresada) {
   return await bcrypt.compare(passwordIngresada, this.password);
 };
 
-// No enviar password en respuestas
 userSchema.methods.toJSON = function () {
   const obj = this.toObject();
   delete obj.password;
