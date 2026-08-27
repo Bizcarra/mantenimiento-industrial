@@ -71,3 +71,13 @@
   stroke-linejoin: round;
   stroke-width: 1.8;
 }
+
+@media (max-width: 420px) {
+  .control {
+    grid-template-columns: minmax(0, 1fr) 44px;
+  }
+
+  .botonCalendario {
+    width: 44px;
+  }
+}

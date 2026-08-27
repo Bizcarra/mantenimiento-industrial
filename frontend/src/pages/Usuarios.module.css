@@ -144,10 +144,12 @@
 
 .tablaContenedor {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .tabla {
   width: 100%;
+  min-width: 760px;
   border-collapse: collapse;
 }
 
@@ -198,6 +200,7 @@
 
 .identidad div {
   display: flex;
+  min-width: 0;
   flex-direction: column;
   gap: 3px;
 }
@@ -209,6 +212,7 @@
 .identidad div span {
   color: #838a9b;
   font-size: 12px;
+  overflow-wrap: anywhere;
 }
 
 .rol,
@@ -461,6 +465,7 @@
 
   .filtros {
     grid-template-columns: 1fr;
+    padding: 15px;
   }
 
   .campos {
@@ -484,5 +489,57 @@
   .modal {
     margin-top: 12px;
     padding: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    width: min(calc(100% - 20px), 1380px);
+    padding: 18px 0 36px;
+  }
+
+  .encabezado {
+    gap: 15px;
+  }
+
+  .encabezado h1 {
+    font-size: 27px;
+    letter-spacing: -0.5px;
+  }
+
+  .botonPrimario,
+  .botonSecundario {
+    width: 100%;
+  }
+
+  .resumen div {
+    padding: 13px 15px;
+  }
+
+  .modalFondo {
+    padding: 8px;
+  }
+
+  .modal {
+    margin-top: 8px;
+    padding: 16px;
+    border-radius: 10px;
+  }
+
+  .modalEncabezado {
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  .modalEncabezado h2 {
+    font-size: 21px;
+  }
+
+  .campos {
+    gap: 14px;
+  }
+
+  .modalAcciones {
+    flex-direction: column-reverse;
   }
 }

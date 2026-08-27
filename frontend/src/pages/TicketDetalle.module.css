@@ -1,4 +1,5 @@
 .container {
+  width: 100%;
   max-width: 900px;
   margin: 0 auto;
   padding: 20px;
@@ -32,6 +33,7 @@
 
 .titulo {
   flex: 1;
+  min-width: 0;
 }
 
 .titulo h1 {
@@ -49,6 +51,7 @@
 
 .badges {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
 }
 
@@ -183,6 +186,8 @@
   color: #555;
   line-height: 1.6;
   font-size: 14px;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .autor {
@@ -246,6 +251,7 @@
 
 .linea1 {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   margin-bottom: 6px;
   align-items: center;
@@ -334,6 +340,10 @@
     gap: 15px;
   }
 
+  .badges {
+    width: 100%;
+  }
+
   .titulo h1 {
     font-size: 22px;
   }
@@ -358,5 +368,36 @@
 
   .usuario {
     min-width: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 12px;
+  }
+
+  .header {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+  }
+
+  .panel,
+  .panelSolucion {
+    padding: 15px;
+  }
+
+  .linea1 {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .entrada {
+    padding: 10px;
+  }
+
+  .botonEnviar {
+    width: 100%;
+    min-height: 44px;
   }
 }

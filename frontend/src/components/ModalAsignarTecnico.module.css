@@ -8,6 +8,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 16px;
   z-index: 1000;
   animation: fadeIn 0.2s ease-out;
 }
@@ -25,7 +26,7 @@
   background: white;
   border-radius: 12px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-  width: 90%;
+  width: min(500px, 100%);
   max-width: 500px;
   max-height: 80vh;
   display: flex;
@@ -152,6 +153,7 @@
 
 .info {
   flex: 1;
+  min-width: 0;
 }
 
 .nombre {
@@ -159,12 +161,14 @@
   color: #333;
   font-size: 0.95rem;
   margin-bottom: 4px;
+  overflow-wrap: anywhere;
 }
 
 .email {
   font-size: 0.85rem;
   color: #666;
   margin-bottom: 4px;
+  overflow-wrap: anywhere;
 }
 
 .area {
@@ -211,12 +215,34 @@
 }
 
 @media (max-width: 600px) {
+  .overlay {
+    align-items: flex-start;
+    padding: 10px;
+  }
+
   .modal {
-    width: 95%;
+    width: 100%;
     max-height: 90vh;
+  }
+
+  .header,
+  .content,
+  .footer {
+    padding-right: 15px;
+    padding-left: 15px;
   }
 
   .header h2 {
     font-size: 1.1rem;
+  }
+
+  .tecnicoItem {
+    align-items: flex-start;
+    padding: 11px 12px;
+  }
+
+  .btnCancelar {
+    width: 100%;
+    min-height: 42px;
   }
 }

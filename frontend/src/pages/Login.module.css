@@ -2,13 +2,15 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
+  min-height: 100vh;
+  min-height: 100svh;
+  padding: clamp(16px, 5vw, 40px);
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
 .card {
   background: white;
-  padding: 40px;
+  padding: clamp(22px, 6vw, 40px);
   border-radius: 10px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
   width: 100%;
@@ -19,7 +21,7 @@
   text-align: center;
   color: #333;
   margin-bottom: 10px;
-  font-size: 28px;
+  font-size: clamp(23px, 7vw, 28px);
 }
 
 .card p {
@@ -102,4 +104,19 @@
 .demo p {
   text-align: left;
   margin: 5px 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 420px) {
+  .card p {
+    margin-bottom: 22px;
+  }
+
+  .grupo {
+    margin-bottom: 16px;
+  }
+
+  .demo {
+    margin-top: 22px;
+  }
 }

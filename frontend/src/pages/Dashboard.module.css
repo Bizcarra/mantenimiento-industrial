@@ -314,8 +314,14 @@
 }
 
 @media (max-width: 1050px) {
+  .filtros,
+  .kpis,
   .graficos {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .filtros > button {
+    grid-column: 1 / -1;
   }
 }
 
@@ -336,11 +342,55 @@
     grid-template-columns: 1fr;
   }
 
+  .filtros > button {
+    grid-column: auto;
+  }
+
   .kpi {
     min-height: 125px;
   }
 
   .barra {
     grid-template-columns: minmax(80px, 105px) 1fr 25px;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    width: min(100% - 20px, 1400px);
+    padding: 18px 0 36px;
+  }
+
+  .encabezado {
+    gap: 14px;
+  }
+
+  .encabezado h1 {
+    font-size: 27px;
+    letter-spacing: -0.5px;
+  }
+
+  .filtros,
+  .panel,
+  .kpi {
+    padding: 15px;
+  }
+
+  .panelTecnicos {
+    padding: 0;
+  }
+
+  .panelTitulo {
+    padding: 15px;
+  }
+
+  .barra {
+    grid-template-columns: minmax(70px, 90px) minmax(55px, 1fr) 24px;
+    gap: 7px;
+  }
+
+  .tabla th,
+  .tabla td {
+    padding: 12px 14px;
   }
 }
