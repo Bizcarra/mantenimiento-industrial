@@ -5,13 +5,14 @@ import styles from './Usuarios.module.css';
 
 const formularioInicial = {
   nombre: '',
+  primerNombre: '',
+  primerApellido: '',
   email: '',
   password: '',
   rol: 'solicitante',
   area: '',
   activo: true,
 };
-
 const etiquetasRol = {
   admin: 'Administrador',
   tecnico: 'Técnico',
@@ -31,6 +32,9 @@ export const Usuarios = () => {
   const [formulario, setFormulario] = useState(formularioInicial);
   const [error, setError] = useState('');
   const [mensaje, setMensaje] = useState('');
+  const [generandoEmail, setGenerandoEmail] = useState(false);
+  const [emailPersonalizado, setEmailPersonalizado] = useState(false);
+  const [ayudaEmail, setAyudaEmail] = useState('');
 
   const cargarUsuarios = async () => {
     try {
@@ -55,10 +59,56 @@ export const Usuarios = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [busqueda, filtroRol, filtroActivo]);
 
+  useEffect(() => {
+    if (!modalAbierto || usuarioEditado || emailPersonalizado) return undefined;
+
+    const primerNombre = formulario.primerNombre.trim();
+    const primerApellido = formulario.primerApellido.trim();
+    if (!primerNombre || !primerApellido) {
+      setFormulario((actual) => ({ ...actual, email: '' }));
+      setAyudaEmail('Escribe el primer nombre y apellido para generar una sugerencia.');
+      return undefined;
+    }
+
+    let cancelado = false;
+    const temporizador = setTimeout(async () => {
+      setGenerandoEmail(true);
+      setAyudaEmail('Buscando un email disponible...');
+      try {
+        const response = await usuariosAPI.sugerirEmail(primerNombre, primerApellido);
+        if (cancelado) return;
+        setFormulario((actual) => ({ ...actual, email: response.data.email }));
+        setAyudaEmail(
+          `Sugerencia interna disponible. Puedes editarla antes de crear la cuenta.`
+        );
+      } catch (err) {
+        if (cancelado) return;
+        setAyudaEmail(
+          err.response?.data?.mensaje || 'No fue posible generar la sugerencia. Escribe el email manualmente.'
+        );
+      } finally {
+        if (!cancelado) setGenerandoEmail(false);
+      }
+    }, 350);
+
+    return () => {
+      cancelado = true;
+      clearTimeout(temporizador);
+    };
+  }, [
+    emailPersonalizado,
+    formulario.primerApellido,
+    formulario.primerNombre,
+    modalAbierto,
+    usuarioEditado,
+  ]);
+
   const abrirNuevo = () => {
     setUsuarioEditado(null);
     setFormulario(formularioInicial);
     setError('');
+    setEmailPersonalizado(false);
+    setAyudaEmail('Escribe el primer nombre y apellido para generar una sugerencia.');
     setModalAbierto(true);
   };
 
@@ -66,6 +116,8 @@ export const Usuarios = () => {
     setUsuarioEditado(usuario);
     setFormulario({
       nombre: usuario.nombre,
+      primerNombre: '',
+      primerApellido: '',
       email: usuario.email,
       password: '',
       rol: usuario.rol,
@@ -73,6 +125,8 @@ export const Usuarios = () => {
       activo: usuario.activo,
     });
     setError('');
+    setEmailPersonalizado(true);
+    setAyudaEmail('El administrador puede modificar este email si es necesario.');
     setModalAbierto(true);
   };
 
@@ -81,10 +135,16 @@ export const Usuarios = () => {
     setModalAbierto(false);
     setUsuarioEditado(null);
     setFormulario(formularioInicial);
+    setEmailPersonalizado(false);
+    setAyudaEmail('');
   };
 
   const actualizarCampo = (event) => {
     const { name, value, type, checked } = event.target;
+    if (name === 'email') {
+      setEmailPersonalizado(true);
+      setAyudaEmail('Email personalizado por el administrador.');
+    }
     setFormulario((actual) => ({
       ...actual,
       [name]: type === 'checkbox' ? checked : value,
@@ -99,6 +159,11 @@ export const Usuarios = () => {
 
     try {
       const datos = { ...formulario };
+      if (!usuarioEditado) {
+        datos.nombre = `${datos.primerNombre.trim()} ${datos.primerApellido.trim()}`;
+      }
+      delete datos.primerNombre;
+      delete datos.primerApellido;
       if (usuarioEditado && !datos.password) delete datos.password;
 
       const response = usuarioEditado
@@ -263,13 +328,62 @@ export const Usuarios = () => {
 
             <form onSubmit={guardarUsuario}>
               <div className={styles.campos}>
-                <label>
-                  <span>Nombre completo</span>
-                  <input name="nombre" value={formulario.nombre} onChange={actualizarCampo} required />
-                </label>
-                <label>
+                {usuarioEditado ? (
+                  <label>
+                    <span>Nombre completo</span>
+                    <input name="nombre" value={formulario.nombre} onChange={actualizarCampo} required />
+                  </label>
+                ) : (
+                  <>
+                    <label>
+                      <span>Primer nombre</span>
+                      <input
+                        name="primerNombre"
+                        value={formulario.primerNombre}
+                        onChange={actualizarCampo}
+                        maxLength={60}
+                        autoComplete="given-name"
+                        required
+                      />
+                    </label>
+                    <label>
+                      <span>Primer apellido</span>
+                      <input
+                        name="primerApellido"
+                        value={formulario.primerApellido}
+                        onChange={actualizarCampo}
+                        maxLength={60}
+                        autoComplete="family-name"
+                        required
+                      />
+                    </label>
+                  </>
+                )}
+                <label className={styles.campoCompleto}>
                   <span>Email</span>
-                  <input name="email" type="email" value={formulario.email} onChange={actualizarCampo} required />
+                  <div className={styles.emailFila}>
+                    <input
+                      name="email"
+                      type="email"
+                      value={formulario.email}
+                      onChange={actualizarCampo}
+                      maxLength={254}
+                      autoComplete="off"
+                      required
+                    />
+                    {!usuarioEditado && emailPersonalizado && (
+                      <button
+                        type="button"
+                        className={styles.botonSugerencia}
+                        onClick={() => setEmailPersonalizado(false)}
+                      >
+                        Volver a sugerir
+                      </button>
+                    )}
+                  </div>
+                  <small className={styles.ayudaCampo}>
+                    {generandoEmail ? 'Generando sugerencia...' : ayudaEmail}
+                  </small>
                 </label>
                 <label>
                   <span>{usuarioEditado ? 'Nueva contraseña (opcional)' : 'Contraseña'}</span>

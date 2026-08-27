@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import http from 'node:http';
 import { after, before, test } from 'node:test';
 
 process.env.NODE_ENV = 'test';
@@ -34,6 +35,21 @@ test('agrega cabeceras seguras y oculta Express', async () => {
   assert.match(respuesta.headers.get('content-security-policy'), /default-src 'self'/);
   assert.ok(respuesta.headers.get('x-request-id'));
   assert.equal(respuesta.headers.get('cache-control'), 'no-store');
+});
+
+test('omite cabeceras de aislamiento no válidas sobre HTTP por IP local', async () => {
+  const respuesta = await new Promise((resolve, reject) => {
+    const solicitud = http.get(`${urlBase}/api/health`, {
+      headers: { Host: '192.168.1.9:5050' },
+    }, resolve);
+    solicitud.on('error', reject);
+  });
+
+  assert.equal(respuesta.statusCode, 200);
+  assert.equal(respuesta.headers['cross-origin-opener-policy'], undefined);
+  assert.equal(respuesta.headers['origin-agent-cluster'], undefined);
+  assert.equal(respuesta.headers['x-content-type-options'], 'nosniff');
+  respuesta.resume();
 });
 
 test('bloquea orígenes web no autorizados', async () => {

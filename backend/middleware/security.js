@@ -16,7 +16,6 @@ const numeroEntorno = (nombre, valorPredeterminado, minimo, maximo) => {
   if (!Number.isFinite(valor)) return valorPredeterminado;
   return Math.min(Math.max(valor, minimo), maximo);
 };
-
 const origenesDesarrollo = [
   'http://localhost:3000',
   'http://127.0.0.1:3000',
@@ -172,5 +171,11 @@ export const validarConfiguracionSegura = () => {
 
   if (esProduccion && origenesPermitidos.size === 0) {
     console.warn('CORS_ORIGINS no está configurado; los navegadores externos no podrán consumir la API.');
+  }
+
+  const dominioEmail = process.env.USER_EMAIL_DOMAIN?.trim().toLowerCase();
+  const dominioValido = /^(?=.{1,100}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/;
+  if (dominioEmail && !dominioValido.test(dominioEmail)) {
+    throw new Error('USER_EMAIL_DOMAIN debe ser únicamente un dominio válido, sin http:// ni rutas');
   }
 };

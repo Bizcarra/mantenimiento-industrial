@@ -39,6 +39,7 @@
   font-size: 28px;
   color: #333;
   font-weight: 600;
+  overflow-wrap: anywhere;
 }
 
 .numero {
@@ -85,6 +86,8 @@
   line-height: 1.6;
   margin: 0 0 15px 0;
   font-size: 15px;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .metadata {
@@ -236,6 +239,11 @@
   border-left: 3px solid #2196f3;
 }
 
+.cambioEstado {
+  background: #f7f8ff;
+  border-left-color: #667eea;
+}
+
 .linea1 {
   display: flex;
   justify-content: space-between;
@@ -267,8 +275,33 @@
 }
 
 .detalles {
+  display: flex;
   color: #666;
   flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+  overflow-wrap: anywhere;
+}
+
+.transicionEstado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+}
+
+.transicionEstado span {
+  padding: 3px 8px;
+  color: #535fb5;
+  background: #e9ebff;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.transicionEstado b {
+  color: #8a90a0;
 }
 
 .vacio {

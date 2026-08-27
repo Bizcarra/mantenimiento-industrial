@@ -7,9 +7,12 @@ export const ModalAsignarTecnico = ({ isOpen, onClose, onSeleccionar, tecnicoAct
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState(null);
   const [busqueda, setBusqueda] = useState('');
+  const [asignandoId, setAsignandoId] = useState('');
 
   useEffect(() => {
     if (isOpen) {
+      setAsignandoId('');
+      setError(null);
       cargarTecnicos();
     }
   }, [isOpen]);
@@ -34,9 +37,23 @@ export const ModalAsignarTecnico = ({ isOpen, onClose, onSeleccionar, tecnicoAct
       tecnico.email.toLowerCase().includes(busqueda.toLowerCase())
   );
 
-  const handleSeleccionar = (tecnico) => {
-    onSeleccionar(tecnico._id, tecnico.nombre);
-    onClose();
+  const handleSeleccionar = async (tecnico) => {
+    if (asignandoId) return;
+    if (typeof tecnico?._id !== 'string' || !tecnico._id) {
+      setError('El técnico seleccionado no tiene un identificador válido.');
+      return;
+    }
+
+    setAsignandoId(tecnico._id);
+    setError(null);
+    try {
+      await onSeleccionar(tecnico._id, tecnico.nombre);
+      onClose();
+    } catch (err) {
+      setError(err.response?.data?.mensaje || 'No fue posible asignar el técnico.');
+    } finally {
+      setAsignandoId('');
+    }
   };
 
   if (!isOpen) return null;
@@ -46,7 +63,7 @@ export const ModalAsignarTecnico = ({ isOpen, onClose, onSeleccionar, tecnicoAct
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.header}>
           <h2>Asignar Técnico</h2>
-          <button className={styles.closeBtn} onClick={onClose}>
+          <button className={styles.closeBtn} onClick={onClose} disabled={Boolean(asignandoId)}>
             ✕
           </button>
         </div>
@@ -73,12 +90,14 @@ export const ModalAsignarTecnico = ({ isOpen, onClose, onSeleccionar, tecnicoAct
           ) : (
             <div className={styles.lista}>
               {tecnicosFiltrados.map((tecnico) => (
-                <div
+                <button
+                  type="button"
                   key={tecnico._id}
                   className={`${styles.tecnicoItem} ${
                     tecnicoActual === tecnico._id ? styles.seleccionado : ''
                   }`}
                   onClick={() => handleSeleccionar(tecnico)}
+                  disabled={Boolean(asignandoId)}
                 >
                   <div className={styles.info}>
                     <div className={styles.nombre}>{tecnico.nombre}</div>
@@ -90,14 +109,17 @@ export const ModalAsignarTecnico = ({ isOpen, onClose, onSeleccionar, tecnicoAct
                   {tecnicoActual === tecnico._id && (
                     <div className={styles.checkmark}>✓</div>
                   )}
-                </div>
+                  {asignandoId === tecnico._id && (
+                    <div className={styles.asignando}>Asignando...</div>
+                  )}
+                </button>
               ))}
             </div>
           )}
         </div>
 
         <div className={styles.footer}>
-          <button onClick={onClose} className={styles.btnCancelar}>
+          <button onClick={onClose} className={styles.btnCancelar} disabled={Boolean(asignandoId)}>
             Cancelar
           </button>
         </div>

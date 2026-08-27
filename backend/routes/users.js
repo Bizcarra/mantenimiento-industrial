@@ -8,10 +8,21 @@ import { authMiddleware, requireRole } from '../middleware/auth.js';
 const router = express.Router();
 const ROLES_VALIDOS = ['admin', 'tecnico', 'solicitante'];
 const EMAIL_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const DOMINIO_EMAIL_INTERNO = (process.env.USER_EMAIL_DOMAIN || 'mantenimiento.local')
+  .trim()
+  .toLowerCase();
 
 router.use(authMiddleware, requireRole('admin'));
 
 const escaparRegex = (valor = '') => valor.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const normalizarParteEmail = (valor) =>
+  valor
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '')
+    .slice(0, 50);
 
 const validarDatosUsuario = (
   { nombre, email, password, rol, area, activo },
@@ -56,6 +67,56 @@ router.get('/', async (req, res, next) => {
       .sort({ nombre: 1, email: 1 })
       .limit(200);
     res.json(usuarios);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Propone un identificador interno único. El administrador puede editarlo antes de guardar.
+router.get('/sugerir-email', async (req, res, next) => {
+  try {
+    const { primerNombre, primerApellido } = req.query;
+    if (
+      typeof primerNombre !== 'string' ||
+      typeof primerApellido !== 'string' ||
+      primerNombre.trim().length === 0 ||
+      primerApellido.trim().length === 0 ||
+      primerNombre.length > 60 ||
+      primerApellido.length > 60
+    ) {
+      return res.status(400).json({ mensaje: 'El primer nombre y el primer apellido son obligatorios' });
+    }
+
+    const nombreNormalizado = normalizarParteEmail(primerNombre);
+    const apellidoNormalizado = normalizarParteEmail(primerApellido);
+    if (!nombreNormalizado || !apellidoNormalizado) {
+      return res.status(400).json({ mensaje: 'No fue posible generar un email con esos nombres' });
+    }
+
+    const base = `${nombreNormalizado}.${apellidoNormalizado}`;
+    const patron = new RegExp(
+      `^${escaparRegex(base)}(?:\\d{3})?@${escaparRegex(DOMINIO_EMAIL_INTERNO)}$`,
+      'i'
+    );
+    const usuariosConBase = await User.find({ email: patron }).select('email -_id').lean();
+    const emailsOcupados = new Set(usuariosConBase.map((usuario) => usuario.email.toLowerCase()));
+    const emailBase = `${base}@${DOMINIO_EMAIL_INTERNO}`;
+
+    if (!emailsOcupados.has(emailBase)) {
+      return res.json({ email: emailBase, dominio: DOMINIO_EMAIL_INTERNO });
+    }
+
+    for (let numero = 0; numero <= 999; numero += 1) {
+      const sufijo = String(numero).padStart(3, '0');
+      const candidato = `${base}${sufijo}@${DOMINIO_EMAIL_INTERNO}`;
+      if (!emailsOcupados.has(candidato)) {
+        return res.json({ email: candidato, dominio: DOMINIO_EMAIL_INTERNO });
+      }
+    }
+
+    return res.status(409).json({
+      mensaje: 'Se agotaron las sugerencias automáticas para este nombre. Escribe un email diferente.',
+    });
   } catch (error) {
     next(error);
   }

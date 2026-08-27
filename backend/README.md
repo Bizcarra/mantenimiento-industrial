@@ -26,6 +26,8 @@ Para una configuración completa, copia `.env.example`. En producción configura
 - `ENFORCE_HTTPS=true`: después de confirmar que el proxy envía `X-Forwarded-Proto`.
 - `TRUST_PROXY=1`: cuando Railway sea el único proxy delante de Express.
 - `ALLOW_PUBLIC_REGISTRATION=false`: las cuentas se crean desde el panel administrador.
+- `USER_EMAIL_DOMAIN=mantenimiento.local`: dominio usado para sugerir identificadores internos
+  editables. Cámbialo por el dominio real de la empresa si corresponde.
 
 Nunca expongas `MONGODB_URI` en el frontend ni lo subas a Git. En MongoDB Atlas usa un
 usuario exclusivo con permisos únicamente sobre esta base de datos y limita el acceso de
@@ -92,13 +94,15 @@ npm test
 
 ### Usuarios (solo administrador)
 - `GET /api/users` - Buscar y filtrar usuarios
+- `GET /api/users/sugerir-email` - Sugerir un email interno único desde nombre y apellido
 - `POST /api/users` - Crear usuario
 - `PATCH /api/users/:id` - Modificar datos, rol, contraseña o estado
 - `DELETE /api/users/:id` - Eliminar usuario sin historial asociado
 
 ### Tickets
-- `GET /api/tickets` - Listar tickets (con filtros)
+- `GET /api/tickets` - Listar tickets; admite estado, prioridad, área, `fechaDesde` y `fechaHasta`
 - `POST /api/tickets` - Crear nuevo ticket
+- `DELETE /api/tickets/:id` - Eliminar definitivamente un ticket y su historial (admin)
 - `GET /api/tickets/:id` - Obtener ticket y su historial
 - `PATCH /api/tickets/:id/asignar` - Asignar a técnico
 - `PATCH /api/tickets/:id/estado` - Cambiar estado
@@ -106,5 +110,5 @@ npm test
 - `PATCH /api/tickets/:id/solucion` - Registrar solución
 
 ### Dashboard
-- `GET /api/dashboard/stats` - Estadísticas generales (admin)
-- `GET /api/dashboard/tecnicos-desempenio` - Desempeño de técnicos (admin)
+- `GET /api/dashboard/stats` - Resúmenes, gráficos y tiempo promedio; admite rango de fechas (admin)
+- `GET /api/dashboard/tecnicos-desempenio` - Desempeño de técnicos por período (admin)

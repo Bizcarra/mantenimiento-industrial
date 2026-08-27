@@ -5,6 +5,28 @@ import { ticketsAPI } from '../services/api';
 import { ModalAsignarTecnico } from '../components/ModalAsignarTecnico';
 import styles from './TicketDetalle.module.css';
 
+const etiquetasAccion = {
+  creacion: 'Creación del ticket',
+  cambio_estado: 'Cambio de estado',
+  asignacion: 'Asignación de técnico',
+  cambio_prioridad: 'Cambio de prioridad',
+  resolucion: 'Solución registrada',
+  comentario: 'Comentario',
+};
+
+const etiquetaEstado = (estado) => ({
+  abierto: 'Abierto',
+  en_progreso: 'En progreso',
+  pausado: 'Pausado',
+  resuelto: 'Resuelto',
+  cerrado: 'Cerrado',
+}[estado] || estado || 'Sin estado');
+
+const formatearFechaHora = (fecha) => new Date(fecha).toLocaleString('es-CL', {
+  dateStyle: 'medium',
+  timeStyle: 'short',
+});
+
 export const TicketDetalle = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -64,15 +86,15 @@ export const TicketDetalle = () => {
     }
   };
 
-  const handleAsignarTecnico = async (tecnicoId, tecnicoNombre) => {
+  const handleAsignarTecnico = async (tecnicoId) => {
     try {
       const response = await ticketsAPI.asignar(id, tecnicoId);
-      // Actualizar el estado del ticket directamente con la respuesta
       setTicket(response.data.ticket);
-      cargarDetalle();
+      await cargarDetalle();
+      return response;
     } catch (error) {
       console.error('Error al asignar técnico:', error);
-      alert('Error al asignar técnico: ' + (error.response?.data?.mensaje || error.message));
+      throw error;
     }
   };
 
@@ -104,6 +126,11 @@ export const TicketDetalle = () => {
     };
     return colores[estado] || '#999';
   };
+
+  const tecnicoAsignadoId = ticket.tecnicoAsignado?._id || ticket.tecnicoAsignado;
+  const puedeGestionar = usuario?.rol === 'admin' ||
+    (usuario?.rol === 'tecnico' && tecnicoAsignadoId === usuario?._id);
+  const ultimoCambioEstado = historial.find((cambio) => cambio.tipoDeAccion === 'cambio_estado');
 
   return (
     <div className={styles.container}>
@@ -141,12 +168,18 @@ export const TicketDetalle = () => {
             <div><strong>Solicitante:</strong> {ticket.solicitante?.nombre}</div>
             <div><strong>Técnico:</strong> {ticket.tecnicoAsignado?.nombre || 'Sin asignar'}</div>
             <div><strong>Creado:</strong> {new Date(ticket.fechaSolicitud).toLocaleString()}</div>
+            {ultimoCambioEstado && (
+              <div>
+                <strong>Último cambio de estado:</strong>
+                {formatearFechaHora(ultimoCambioEstado.timestamp)}
+              </div>
+            )}
             {ticket.tiempoTranscurridoMinutos && (
               <div><strong>Tiempo:</strong> {ticket.tiempoTranscurridoMinutos} min</div>
             )}
           </div>
 
-          {(usuario?.rol === 'admin' || usuario?.rol === 'tecnico') && (
+          {puedeGestionar && (
             <div className={styles.controles}>
               <div className={styles.grupo}>
                 <select value={nuevoEstado} onChange={(e) => setNuevoEstado(e.target.value)}>
@@ -208,7 +241,7 @@ export const TicketDetalle = () => {
           </div>
         )}
 
-        {(usuario?.rol === 'admin' || usuario?.rol === 'tecnico') && (
+        {puedeGestionar && (
           <div className={styles.panel}>
             <h3>Registrar Solución</h3>
             <textarea
@@ -230,17 +263,31 @@ export const TicketDetalle = () => {
             <p className={styles.vacio}>Sin cambios</p>
           ) : (
             <div className={styles.historial}>
-              {historial.map((cambio, index) => (
-                <div key={index} className={styles.entrada}>
+              {historial.map((cambio) => (
+                <div
+                  key={cambio._id}
+                  className={`${styles.entrada} ${
+                    cambio.tipoDeAccion === 'cambio_estado' ? styles.cambioEstado : ''
+                  }`}
+                >
                   <div className={styles.linea1}>
-                    <strong>{cambio.tipoDeAccion}</strong>
-                    <span className={styles.fecha}>
-                      {new Date(cambio.timestamp).toLocaleString()}
-                    </span>
+                    <strong>{etiquetasAccion[cambio.tipoDeAccion] || cambio.tipoDeAccion}</strong>
+                    <time className={styles.fecha} dateTime={cambio.timestamp}>
+                      {formatearFechaHora(cambio.timestamp)}
+                    </time>
                   </div>
                   <div className={styles.linea2}>
                     <span className={styles.usuario}>{cambio.usuarioQueCambia?.nombre}</span>
-                    <span className={styles.detalles}>{cambio.detalles}</span>
+                    <div className={styles.detalles}>
+                      {cambio.tipoDeAccion === 'cambio_estado' && (
+                        <div className={styles.transicionEstado}>
+                          <span>{etiquetaEstado(cambio.datosAnteriores?.estado)}</span>
+                          <b aria-hidden="true">→</b>
+                          <span>{etiquetaEstado(cambio.datosNuevos?.estado)}</span>
+                        </div>
+                      )}
+                      <span>{cambio.detalles}</span>
+                    </div>
                   </div>
                 </div>
               ))}
