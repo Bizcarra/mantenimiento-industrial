@@ -36,6 +36,10 @@ export const ticketsAPI = {
 // Endpoints de usuarios
 export const usuariosAPI = {
   obtenerTecnicos: () => apiClient.get('/auth/tecnicos'),
+  listar: (filtros = {}) => apiClient.get('/users', { params: filtros }),
+  crear: (datos) => apiClient.post('/users', datos),
+  actualizar: (id, datos) => apiClient.patch(`/users/${id}`, datos),
+  eliminar: (id) => apiClient.delete(`/users/${id}`),
 };
 
 // Endpoints de dashboard

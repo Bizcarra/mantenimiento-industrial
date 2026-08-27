@@ -42,9 +42,15 @@ npm start
 ## Endpoints
 
 ### Autenticación
-- `POST /api/auth/registro` - Registrar nuevo usuario
+- `POST /api/auth/registro` - Registrar un solicitante
 - `POST /api/auth/login` - Login
 - `GET /api/auth/me` - Obtener usuario actual
+
+### Usuarios (solo administrador)
+- `GET /api/users` - Buscar y filtrar usuarios
+- `POST /api/users` - Crear usuario
+- `PATCH /api/users/:id` - Modificar datos, rol, contraseña o estado
+- `DELETE /api/users/:id` - Eliminar usuario sin historial asociado
 
 ### Tickets
 - `GET /api/tickets` - Listar tickets (con filtros)
