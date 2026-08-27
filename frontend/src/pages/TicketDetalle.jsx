@@ -130,10 +130,7 @@ export const TicketDetalle = () => {
   const tecnicoAsignadoId = ticket.tecnicoAsignado?._id || ticket.tecnicoAsignado;
   const puedeGestionar = usuario?.rol === 'admin' ||
     (usuario?.rol === 'tecnico' && tecnicoAsignadoId === usuario?._id);
-<<<<<<< HEAD
-=======
   const ultimoCambioEstado = historial.find((cambio) => cambio.tipoDeAccion === 'cambio_estado');
->>>>>>> D
 
   return (
     <div className={styles.container}>

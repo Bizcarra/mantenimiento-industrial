@@ -4,6 +4,9 @@ import { after, before, test } from 'node:test';
 
 process.env.NODE_ENV = 'test';
 process.env.JWT_SECRET = 'test-secret-with-at-least-thirty-two-characters';
+process.env.PORT = '5050';
+process.env.ALLOWED_HOSTS = 'localhost,127.0.0.1';
+process.env.ALLOW_PRIVATE_LAN = 'true';
 
 const { default: app } = await import('../app.js');
 
@@ -112,6 +115,47 @@ test('no filtra errores internos ni rutas de Express', async () => {
   const inexistente = await fetch(`${urlBase}/api/no-existe`);
   assert.equal(inexistente.status, 404);
   assert.deepEqual(await inexistente.json(), { mensaje: 'Ruta no encontrada' });
+});
+
+test('acepta una IP privada nueva sin cambiar el codigo y rechaza hosts externos', async () => {
+  const privada = await new Promise((resolve, reject) => {
+    const solicitud = http.get(`${urlBase}/api/health`, {
+      headers: { Host: '192.168.50.23:5050' },
+    }, resolve);
+    solicitud.on('error', reject);
+  });
+  assert.equal(privada.statusCode, 200);
+  privada.resume();
+
+  const externa = await new Promise((resolve, reject) => {
+    const solicitud = http.get(`${urlBase}/api/health`, {
+      headers: { Host: '203.0.113.8:5050' },
+    }, resolve);
+    solicitud.on('error', reject);
+  });
+  assert.equal(externa.statusCode, 400);
+  externa.resume();
+
+  const falsoPrivado = await new Promise((resolve, reject) => {
+    const solicitud = http.get(`${urlBase}/api/health`, {
+      headers: { Host: '192.168.50.23evil:5050' },
+    }, resolve);
+    solicitud.on('error', reject);
+  });
+  assert.equal(falsoPrivado.statusCode, 400);
+  falsoPrivado.resume();
+});
+
+test('acepta CORS desde la IP privada actual en el puerto LAN', async () => {
+  const respuesta = await fetch(`${urlBase}/api/health`, {
+    headers: { Origin: 'http://10.20.30.40:5050' },
+  });
+
+  assert.equal(respuesta.status, 200);
+  assert.equal(
+    respuesta.headers.get('access-control-allow-origin'),
+    'http://10.20.30.40:5050'
+  );
 });
 
 test('limita intentos repetidos sobre una misma cuenta', async () => {

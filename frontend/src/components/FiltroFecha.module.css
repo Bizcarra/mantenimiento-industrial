@@ -1,0 +1,73 @@
+.campo {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.campo > label {
+  color: #596174;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.control {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) 42px;
+}
+
+.control input {
+  width: 100%;
+  min-width: 0;
+  height: 42px;
+  padding: 0 10px;
+  color: #252b3a;
+  background: #fff;
+  border: 1px solid #d8dce6;
+  border-right: 0;
+  border-radius: 7px 0 0 7px;
+  font: inherit;
+}
+
+.control input:focus {
+  position: relative;
+  z-index: 1;
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+}
+
+.control input::-webkit-calendar-picker-indicator {
+  display: none;
+}
+
+.botonCalendario {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  place-items: center;
+  color: #535fb5;
+  background: #f5f6ff;
+  border: 1px solid #d9dcf0;
+  border-radius: 0 7px 7px 0;
+  cursor: pointer;
+}
+
+.botonCalendario:hover,
+.botonCalendario:focus-visible {
+  color: #fff;
+  background: #667eea;
+  outline: none;
+}
+
+.botonCalendario svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}

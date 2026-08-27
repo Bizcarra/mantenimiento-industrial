@@ -14,7 +14,3 @@ if "%RESULTADO%"=="0" (
 pause
 
 exit /b %RESULTADO%
-<<<<<<< HEAD
-=======
-
->>>>>>> D

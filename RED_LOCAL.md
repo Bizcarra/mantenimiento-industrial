@@ -7,8 +7,8 @@ no es necesario copiar el proyecto a cada dispositivo.
 ## Iniciar
 
 1. En el computador principal, ejecuta `INICIAR_RED_LOCAL.cmd`.
-2. Espera a que aparezca la dirección, por ejemplo `http://192.168.1.9:5050`.
-3. Abre esa dirección en los otros dispositivos conectados al mismo Wi-Fi.
+2. Espera a que aparezcan la dirección y el código QR.
+3. En otro dispositivo del mismo Wi-Fi, escanea el QR o escribe el enlace mostrado.
 
 El iniciador comprueba los requisitos, instala dependencias, compila el frontend y sirve
 frontend y API desde el puerto 5050.
@@ -18,5 +18,11 @@ frontend y API desde el puerto 5050.
 Si otro dispositivo no puede entrar, ejecuta una vez
 `CONFIGURAR_FIREWALL_RED_LOCAL.cmd` como administrador y acepta el aviso de Windows.
 
-La dirección IP puede cambiar al reconectar el router. Usa siempre la dirección que
-muestra `INICIAR_RED_LOCAL.cmd` al iniciar.
+La dirección IP puede cambiar al reconectar el router. `INICIAR_RED_LOCAL.cmd` la
+detecta en cada inicio, informa si cambió y regenera automáticamente el enlace y el QR.
+No hay que modificar archivos del frontend o del backend. Si el teléfono conserva una
+dirección anterior, vuelve a escanear el QR actual.
+
+Mientras la ventana del iniciador permanezca abierta, revisa la conexión cada 10 segundos.
+Si detecta una IP nueva, vuelve a mostrar el QR y abre la dirección actualizada. Puedes
+cerrar esa ventana de monitoreo sin detener la terminal donde se ejecuta el servidor.

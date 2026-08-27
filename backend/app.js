@@ -25,11 +25,8 @@ const servirFrontend = process.env.SERVE_FRONTEND === 'true';
 const trustProxy = Number.parseInt(process.env.TRUST_PROXY, 10);
 const backendDirectory = path.dirname(fileURLToPath(import.meta.url));
 const frontendDist = path.resolve(backendDirectory, '../frontend/dist');
-<<<<<<< HEAD
-=======
 const coopSegura = helmet.crossOriginOpenerPolicy({ policy: 'same-origin' });
 const clusterSeguro = helmet.originAgentCluster();
->>>>>>> D
 
 app.disable('x-powered-by');
 app.set('query parser', 'simple');

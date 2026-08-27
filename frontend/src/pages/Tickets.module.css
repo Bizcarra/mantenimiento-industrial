@@ -162,8 +162,12 @@
   font-weight: 700;
 }
 
+.filtroFecha {
+  min-width: 0;
+}
+
 .filtros select,
-.filtros input {
+.filtroCampo input {
   width: 100%;
   min-width: 0;
   height: 42px;

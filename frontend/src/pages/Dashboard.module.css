@@ -52,7 +52,7 @@
 
 .filtros {
   display: grid;
-  grid-template-columns: repeat(2, minmax(180px, 240px)) auto;
+  grid-template-columns: repeat(3, minmax(200px, 1fr));
   align-items: end;
   gap: 14px;
   margin-bottom: 22px;
@@ -62,21 +62,7 @@
   border-radius: 11px;
 }
 
-.filtros label {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.filtros label span {
-  color: #596174;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.filtros input,
-.filtros button {
+.filtros > button {
   height: 42px;
   padding: 0 12px;
   border: 1px solid #d8dce6;
@@ -84,13 +70,7 @@
   font: inherit;
 }
 
-.filtros input {
-  min-width: 0;
-  color: #252b3a;
-  background: #fff;
-}
-
-.filtros button {
+.filtros > button {
   color: #535fb5;
   background: #f5f6ff;
   border-color: #d9dcf0;
@@ -99,7 +79,7 @@
   cursor: pointer;
 }
 
-.filtros button:disabled {
+.filtros > button:disabled {
   cursor: not-allowed;
   opacity: 0.45;
 }

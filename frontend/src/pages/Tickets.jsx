@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { ticketsAPI } from '../services/api';
+import { FiltroFecha } from '../components/FiltroFecha';
 import styles from './Tickets.module.css';
 
 export const Tickets = () => {
@@ -267,25 +268,21 @@ export const Tickets = () => {
           />
         </label>
 
-        <label className={styles.filtroCampo}>
-          <span>Desde</span>
-          <input
-            type="date"
-            value={filtros.fechaDesde}
-            max={filtros.fechaHasta || undefined}
-            onChange={(e) => setFiltros({ ...filtros, fechaDesde: e.target.value })}
-          />
-        </label>
+        <FiltroFecha
+          etiqueta="Desde"
+          value={filtros.fechaDesde}
+          max={filtros.fechaHasta || undefined}
+          onChange={(e) => setFiltros({ ...filtros, fechaDesde: e.target.value })}
+          className={styles.filtroFecha}
+        />
 
-        <label className={styles.filtroCampo}>
-          <span>Hasta</span>
-          <input
-            type="date"
-            value={filtros.fechaHasta}
-            min={filtros.fechaDesde || undefined}
-            onChange={(e) => setFiltros({ ...filtros, fechaHasta: e.target.value })}
-          />
-        </label>
+        <FiltroFecha
+          etiqueta="Hasta"
+          value={filtros.fechaHasta}
+          min={filtros.fechaDesde || undefined}
+          onChange={(e) => setFiltros({ ...filtros, fechaHasta: e.target.value })}
+          className={styles.filtroFecha}
+        />
 
         <button
           type="button"

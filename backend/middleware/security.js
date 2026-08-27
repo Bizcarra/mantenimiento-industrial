@@ -2,6 +2,7 @@ import cors from 'cors';
 import { ipKeyGenerator, rateLimit } from 'express-rate-limit';
 
 const esProduccion = process.env.NODE_ENV === 'production';
+const permitirLanPrivada = !esProduccion && process.env.ALLOW_PRIVATE_LAN === 'true';
 const metodosConJson = new Set(['POST', 'PUT', 'PATCH']);
 const clavesPeligrosas = new Set(['__proto__', 'prototype', 'constructor']);
 
@@ -16,6 +17,39 @@ const numeroEntorno = (nombre, valorPredeterminado, minimo, maximo) => {
   if (!Number.isFinite(valor)) return valorPredeterminado;
   return Math.min(Math.max(valor, minimo), maximo);
 };
+
+const esIPv4Privada = (host) => {
+  if (typeof host !== 'string') return false;
+  const secciones = host.split('.');
+  if (secciones.length !== 4 || secciones.some((parte) => !/^\d{1,3}$/.test(parte))) {
+    return false;
+  }
+
+  const partes = secciones.map((parte) => Number.parseInt(parte, 10));
+  if (partes.some((parte) => parte > 255)) {
+    return false;
+  }
+
+  return partes[0] === 10 ||
+    (partes[0] === 172 && partes[1] >= 16 && partes[1] <= 31) ||
+    (partes[0] === 192 && partes[1] === 168);
+};
+
+const esOrigenLanPermitido = (origen) => {
+  if (!permitirLanPrivada) return false;
+
+  try {
+    const url = new URL(origen);
+    const puertoEsperado = String(process.env.PORT || 5050);
+    return url.protocol === 'http:' &&
+      url.port === puertoEsperado &&
+      esIPv4Privada(url.hostname) &&
+      url.username === '' &&
+      url.password === '';
+  } catch {
+    return false;
+  }
+};
 const origenesDesarrollo = [
   'http://localhost:3000',
   'http://127.0.0.1:3000',
@@ -29,7 +63,9 @@ const origenesPermitidos = new Set([
 export const corsSeguro = cors({
   origin(origen, callback) {
     // Se permiten clientes sin Origin (CLI, backend a backend y health checks).
-    if (!origen || origenesPermitidos.has(origen)) return callback(null, true);
+    if (!origen || origenesPermitidos.has(origen) || esOrigenLanPermitido(origen)) {
+      return callback(null, true);
+    }
 
     const error = new Error('Origen no permitido');
     error.status = 403;
@@ -142,7 +178,8 @@ export const validarHost = (req, res, next) => {
   if (hostsPermitidos.length === 0) return next();
 
   const host = req.hostname?.toLowerCase();
-  const permitido = hostsPermitidos.some((valor) => valor.toLowerCase() === host);
+  const permitido = hostsPermitidos.some((valor) => valor.toLowerCase() === host) ||
+    (permitirLanPrivada && esIPv4Privada(host));
   if (!permitido) return res.status(400).json({ mensaje: 'Host no permitido' });
 
   next();

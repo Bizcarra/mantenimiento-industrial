@@ -147,7 +147,16 @@ function Get-LanIPv4 {
         $candidates = @(
             Get-NetIPConfiguration -ErrorAction Stop |
                 Where-Object { $_.IPv4DefaultGateway -and $_.NetAdapter.Status -eq 'Up' } |
-                ForEach-Object { $_.IPv4Address.IPAddress }
+                ForEach-Object {
+                    $configuration = $_
+                    $adapterText = "$($configuration.InterfaceAlias) $($configuration.NetAdapter.Name) $($configuration.NetAdapter.InterfaceDescription)"
+                    foreach ($address in $configuration.IPv4Address.IPAddress) {
+                        [PSCustomObject]@{
+                            Address = $address
+                            Priority = if ($adapterText -match '(?i)wi-?fi|wireless|wlan|inalambr') { 0 } else { 1 }
+                        }
+                    }
+                }
         )
     }
     catch {
@@ -158,28 +167,72 @@ function Get-LanIPv4 {
         $candidates = @(
             [Net.Dns]::GetHostAddresses([Net.Dns]::GetHostName()) |
                 Where-Object { $_.AddressFamily -eq [Net.Sockets.AddressFamily]::InterNetwork } |
-                ForEach-Object { $_.IPAddressToString }
+                ForEach-Object {
+                    [PSCustomObject]@{ Address = $_.IPAddressToString; Priority = 2 }
+                }
         )
     }
 
     $usable = $candidates | Where-Object {
-        $_ -and $_ -ne '127.0.0.1' -and -not $_.StartsWith('169.254.')
+        $_.Address -and $_.Address -ne '127.0.0.1' -and -not $_.Address.StartsWith('169.254.')
     }
     $private = $usable | Where-Object {
-        $_ -match '^10\.' -or
-        $_ -match '^192\.168\.' -or
-        $_ -match '^172\.(1[6-9]|2[0-9]|3[01])\.'
+        $_.Address -match '^10\.' -or
+        $_.Address -match '^192\.168\.' -or
+        $_.Address -match '^172\.(1[6-9]|2[0-9]|3[01])\.'
     }
 
-    $selected = $private | Select-Object -First 1
-    if (-not $selected) {
-        $selected = $usable | Select-Object -First 1
-    }
+    $selected = $private | Sort-Object Priority | Select-Object -First 1
     if (-not $selected) {
         throw 'No se encontro una direccion IPv4 de red local. Confirme que el Wi-Fi este conectado.'
     }
 
-    return $selected
+    return $selected.Address
+}
+
+function Update-LanIpState {
+    param([string]$LanIp)
+
+    $stateDirectory = Join-Path $env:LOCALAPPDATA 'MantenimientoIndustrial'
+    $statePath = Join-Path $stateDirectory 'ultima-ip-red-local.txt'
+    $previousIp = $null
+
+    if (Test-Path -LiteralPath $statePath) {
+        $previousIp = [IO.File]::ReadAllText($statePath).Trim()
+    }
+
+    if ($previousIp -and $previousIp -ne $LanIp) {
+        Write-Host "La IP cambio de $previousIp a $LanIp; el enlace y el QR fueron actualizados." -ForegroundColor Yellow
+    }
+    elseif ($previousIp -eq $LanIp) {
+        Write-Host "La IP de red sigue siendo $LanIp." -ForegroundColor DarkGray
+    }
+    else {
+        Write-Host "IP de red detectada: $LanIp" -ForegroundColor Green
+    }
+
+    New-Item -ItemType Directory -Path $stateDirectory -Force | Out-Null
+    [IO.File]::WriteAllText($statePath, $LanIp, [Text.UTF8Encoding]::new($false))
+}
+
+function Show-LanAccess {
+    param([string]$LanUrl)
+
+    Write-Host "`nAplicacion disponible para este Wi-Fi:" -ForegroundColor Green
+    Write-Host "  $LanUrl" -ForegroundColor White
+    Write-Host 'En los otros dispositivos no hay que instalar nada: solo abrir ese enlace.'
+    Write-Host 'Si no pueden entrar, ejecute una vez CONFIGURAR_FIREWALL_RED_LOCAL.cmd como administrador.' -ForegroundColor Yellow
+
+    Push-Location $backendPath
+    try {
+        & node.exe 'scripts/mostrarAccesoRed.js' $LanUrl
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host 'La aplicacion funciona, pero no se pudo dibujar el QR. Use el enlace mostrado arriba.' -ForegroundColor Yellow
+        }
+    }
+    finally {
+        Pop-Location
+    }
 }
 
 function Start-LanBackend {
@@ -197,6 +250,7 @@ function Start-LanBackend {
 [Environment]::SetEnvironmentVariable('PORT', '$port', 'Process')
 [Environment]::SetEnvironmentVariable('SERVE_FRONTEND', 'true', 'Process')
 [Environment]::SetEnvironmentVariable('ALLOWED_HOSTS', '$allowedHosts', 'Process')
+[Environment]::SetEnvironmentVariable('ALLOW_PRIVATE_LAN', 'true', 'Process')
 [Environment]::SetEnvironmentVariable('CORS_ORIGINS', '$allowedOrigins', 'Process')
 [Environment]::SetEnvironmentVariable('ENFORCE_HTTPS', 'false', 'Process')
 Set-Location -LiteralPath '$safeDirectory'
@@ -251,11 +305,7 @@ try {
             -FailureMessage 'git pull fallo. Revise la conexion o los cambios locales.'
     }
     else {
-<<<<<<< HEAD
-        Write-Host 'Paquete transferible detectado: se omite git pull.' -ForegroundColor Yellow
-=======
         Write-Host 'Copia local sin historial Git: se omite git pull.' -ForegroundColor Yellow
->>>>>>> D
     }
 
     Write-Step 'Instalando dependencias'
@@ -284,6 +334,7 @@ try {
     }
 
     $lanIp = Get-LanIPv4
+    Update-LanIpState -LanIp $lanIp
     $lanUrl = "http://${lanIp}:$port"
     $localUrl = "http://127.0.0.1:$port"
 
@@ -306,14 +357,46 @@ try {
         throw "El servidor funciona localmente, pero no responde en $lanUrl. Revise ALLOWED_HOSTS y la conexion Wi-Fi."
     }
 
-    Write-Host "`nAplicacion disponible para este Wi-Fi:" -ForegroundColor Green
-    Write-Host "  $lanUrl" -ForegroundColor White
-    Write-Host 'En los otros dispositivos no hay que instalar nada: solo abrir ese enlace.'
-    Write-Host 'Si no pueden entrar, ejecute una vez CONFIGURAR_FIREWALL_RED_LOCAL.cmd como administrador.' -ForegroundColor Yellow
-
+    Show-LanAccess -LanUrl $lanUrl
     Start-Process $lanUrl
-    Start-Sleep -Seconds 5
-    exit 0
+    Write-Host 'Esta ventana vigila la IP. Puede cerrarla sin detener el servidor.' -ForegroundColor DarkGray
+    Write-Host 'Si la IP cambia, el enlace y el QR se actualizaran automaticamente.' -ForegroundColor DarkGray
+
+    $currentLanIp = $lanIp
+    $networkWarningShown = $false
+    while ($true) {
+        Start-Sleep -Seconds 10
+        try {
+            $detectedLanIp = Get-LanIPv4
+            $networkWarningShown = $false
+            if ($detectedLanIp -eq $currentLanIp) {
+                continue
+            }
+
+            $previousLanIp = $currentLanIp
+            $newLanUrl = "http://${detectedLanIp}:$port"
+
+            if (-not (Wait-HttpEndpoint -Url $newLanUrl -ExpectedText '<div id="root"></div>' -TimeoutSeconds 15)) {
+                Write-Host "La IP cambio a $detectedLanIp, pero el servidor aun no responde en la nueva red." -ForegroundColor Yellow
+                continue
+            }
+
+            $currentLanIp = $detectedLanIp
+            $lanUrl = $newLanUrl
+            Update-LanIpState -LanIp $currentLanIp
+            Clear-Host
+            Write-Host "La IP cambio de $previousLanIp a $currentLanIp." -ForegroundColor Yellow
+            Show-LanAccess -LanUrl $lanUrl
+            Start-Process $lanUrl
+            Write-Host 'El navegador y el QR ya usan la direccion nueva.' -ForegroundColor Green
+        }
+        catch {
+            if (-not $networkWarningShown) {
+                Write-Host 'Se perdio temporalmente la red local. Se seguira buscando una conexion cada 10 segundos.' -ForegroundColor Yellow
+                $networkWarningShown = $true
+            }
+        }
+    }
 }
 catch {
     Write-Host "`nERROR: $($_.Exception.Message)" -ForegroundColor Red

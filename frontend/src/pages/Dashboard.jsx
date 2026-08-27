@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { dashboardAPI } from '../services/api';
+import { FiltroFecha } from '../components/FiltroFecha';
 import styles from './Dashboard.module.css';
 
 const etiquetas = {
@@ -125,24 +126,18 @@ export const Dashboard = () => {
       </header>
 
       <section className={styles.filtros} aria-label="Período del Dashboard">
-        <label>
-          <span>Solicitudes desde</span>
-          <input
-            type="date"
-            value={filtros.fechaDesde}
-            max={filtros.fechaHasta || undefined}
-            onChange={(event) => setFiltros({ ...filtros, fechaDesde: event.target.value })}
-          />
-        </label>
-        <label>
-          <span>Solicitudes hasta</span>
-          <input
-            type="date"
-            value={filtros.fechaHasta}
-            min={filtros.fechaDesde || undefined}
-            onChange={(event) => setFiltros({ ...filtros, fechaHasta: event.target.value })}
-          />
-        </label>
+        <FiltroFecha
+          etiqueta="Solicitudes desde"
+          value={filtros.fechaDesde}
+          max={filtros.fechaHasta || undefined}
+          onChange={(event) => setFiltros({ ...filtros, fechaDesde: event.target.value })}
+        />
+        <FiltroFecha
+          etiqueta="Solicitudes hasta"
+          value={filtros.fechaHasta}
+          min={filtros.fechaDesde || undefined}
+          onChange={(event) => setFiltros({ ...filtros, fechaHasta: event.target.value })}
+        />
         <button
           type="button"
           onClick={() => setFiltros({ fechaDesde: '', fechaHasta: '' })}
