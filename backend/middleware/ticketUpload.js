@@ -21,9 +21,12 @@ const carga = multer({
     fileSize: TAMANO_MAXIMO_FOTO,
     files: 1,
     fields: 4,
-    parts: 5,
+    // Busboy emite LIMIT_PART_COUNT al alcanzar el límite, no solo al superarlo.
+    // El formulario válido contiene 4 campos + 1 archivo, por eso se deja un margen de una parte.
+    parts: 6,
     fieldNameSize: 50,
-    fieldSize: 5000,
+    // Los límites del modelo se expresan en caracteres; UTF-8 puede ocupar hasta 4 bytes por carácter.
+    fieldSize: 20 * 1024,
   },
   fileFilter: (req, archivo, callback) => {
     if (!tiposDeclaradosPermitidos.has(archivo.mimetype)) {

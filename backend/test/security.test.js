@@ -35,7 +35,9 @@ test('agrega cabeceras seguras y oculta Express', async () => {
   assert.equal(respuesta.status, 200);
   assert.equal(respuesta.headers.get('x-powered-by'), null);
   assert.equal(respuesta.headers.get('x-content-type-options'), 'nosniff');
-  assert.match(respuesta.headers.get('content-security-policy'), /default-src 'self'/);
+  const politicaContenido = respuesta.headers.get('content-security-policy');
+  assert.match(politicaContenido, /default-src 'self'/);
+  assert.match(politicaContenido, /img-src 'self' data: blob:/);
   assert.ok(respuesta.headers.get('x-request-id'));
   assert.equal(respuesta.headers.get('cache-control'), 'no-store');
 });

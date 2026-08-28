@@ -49,6 +49,7 @@ app.use(
     strictTransportSecurity: esProduccion ? undefined : false,
     contentSecurityPolicy: {
       directives: {
+        imgSrc: ["'self'", 'data:', 'blob:'],
         upgradeInsecureRequests: esProduccion ? [] : null,
       },
     },
