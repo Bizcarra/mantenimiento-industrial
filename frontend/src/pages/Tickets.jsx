@@ -4,6 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import { ticketsAPI } from '../services/api';
 import { FiltroFecha } from '../components/FiltroFecha';
 import { useAutoRefresh } from '../hooks/useAutoRefresh';
+import { playNotificationSound } from '../utils/sounds';
 import Swal from 'sweetalert2';
 import styles from './Tickets.module.css';
 
@@ -112,12 +113,29 @@ export const Tickets = () => {
       setFormData({ titulo: '', descripcion: '', area: '', prioridad: 'media' });
       quitarFoto();
       setMostrarForm(false);
+
+      // Reproducir sonido de éxito
+      playNotificationSound('success');
+
       setMensajeExito(
         `${response.data.ticket.numeroTicket || 'Ticket'} creado correctamente`
       );
+
+      // Mostrar notificación visual con SweetAlert2
+      Swal.fire({
+        title: '¡Ticket creado!',
+        html: `<strong>${response.data.ticket.numeroTicket}</strong><br>${response.data.ticket.titulo}`,
+        icon: 'success',
+        timer: 3000,
+        showConfirmButton: false,
+        toast: true,
+        position: 'top-end',
+      });
+
       await cargarTickets();
     } catch (error) {
       console.error('Error al crear ticket:', error);
+      playNotificationSound('error');
       setMensajeError(
         error.response?.data?.mensaje || 'No fue posible crear el ticket. Intenta nuevamente.'
       );

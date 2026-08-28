@@ -2,6 +2,7 @@ import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { usuariosAPI } from '../services/api';
 import { useAutoRefresh } from '../hooks/useAutoRefresh';
+import Swal from 'sweetalert2';
 import styles from './Usuarios.module.css';
 
 const formularioInicial = {
@@ -193,18 +194,42 @@ export const Usuarios = () => {
   };
 
   const eliminarUsuario = async (usuario) => {
-    const confirmado = window.confirm(
-      `¿Eliminar definitivamente a ${usuario.nombre}? Esta acción no se puede deshacer.`
-    );
-    if (!confirmado) return;
+    const result = await Swal.fire({
+      title: '¿Estás seguro?',
+      html: `Eliminarás definitivamente al usuario:<br><strong>${usuario.nombre}</strong><br><small>${usuario.email}</small><br><br>Esta acción no se puede deshacer.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+      reverseButtons: true,
+      focusCancel: true,
+    });
+
+    if (!result.isConfirmed) return;
 
     try {
       setError('');
       setMensaje('');
       const response = await usuariosAPI.eliminar(usuario._id);
-      setMensaje(response.data.mensaje);
+
       await cargarUsuarios();
+
+      Swal.fire({
+        title: '¡Eliminado!',
+        text: response.data.mensaje || 'El usuario ha sido eliminado correctamente.',
+        icon: 'success',
+        timer: 2500,
+        showConfirmButton: false,
+      });
     } catch (err) {
+      Swal.fire({
+        title: 'Error',
+        text: err.response?.data?.mensaje || 'No fue posible eliminar el usuario.',
+        icon: 'error',
+        confirmButtonColor: '#3085d6',
+      });
       setError(err.response?.data?.mensaje || 'No fue posible eliminar el usuario');
     }
   };
