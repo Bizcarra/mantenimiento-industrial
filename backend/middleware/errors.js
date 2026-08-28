@@ -1,4 +1,13 @@
 const obtenerErrorHttp = (error) => {
+  if (error.name === 'MulterError') {
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      return { estado: 413, mensaje: 'La foto no puede superar 5 MB' };
+    }
+    if (error.code === 'LIMIT_UNEXPECTED_FILE') {
+      return { estado: 400, mensaje: 'Solo se permite una foto en el campo "foto"' };
+    }
+    return { estado: 400, mensaje: 'La carga de la foto no es válida' };
+  }
   if (error.type === 'entity.too.large') {
     return { estado: 413, mensaje: 'El cuerpo de la solicitud es demasiado grande' };
   }

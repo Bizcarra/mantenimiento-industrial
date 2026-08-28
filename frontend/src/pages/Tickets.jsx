@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useCallback } from 'react';
+import React, { useState, useEffect, useContext, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { ticketsAPI } from '../services/api';
@@ -17,6 +17,9 @@ export const Tickets = () => {
   const [mensajeExito, setMensajeExito] = useState('');
   const [eliminandoId, setEliminandoId] = useState('');
   const [ultimaActualizacion, setUltimaActualizacion] = useState(null);
+  const [foto, setFoto] = useState(null);
+  const [vistaPreviaFoto, setVistaPreviaFoto] = useState('');
+  const fotoInputRef = useRef(null);
   const [filtros, setFiltros] = useState({
     estado: '',
     prioridad: '',
@@ -60,14 +63,53 @@ export const Tickets = () => {
 
   useAutoRefresh(() => cargarTickets({ silencioso: true }));
 
+  useEffect(() => () => {
+    if (vistaPreviaFoto) URL.revokeObjectURL(vistaPreviaFoto);
+  }, [vistaPreviaFoto]);
+
+  const seleccionarFoto = (event) => {
+    const archivo = event.target.files?.[0] || null;
+    setMensajeError('');
+
+    if (!archivo) {
+      setFoto(null);
+      setVistaPreviaFoto('');
+      return;
+    }
+    if (!['image/jpeg', 'image/png'].includes(archivo.type)) {
+      event.target.value = '';
+      setFoto(null);
+      setVistaPreviaFoto('');
+      setMensajeError('La foto debe estar en formato JPG o PNG.');
+      return;
+    }
+    if (archivo.size > 5 * 1024 * 1024) {
+      event.target.value = '';
+      setFoto(null);
+      setVistaPreviaFoto('');
+      setMensajeError('La foto no puede superar 5 MB.');
+      return;
+    }
+
+    setFoto(archivo);
+    setVistaPreviaFoto(URL.createObjectURL(archivo));
+  };
+
+  const quitarFoto = () => {
+    setFoto(null);
+    setVistaPreviaFoto('');
+    if (fotoInputRef.current) fotoInputRef.current.value = '';
+  };
+
   const handleCrearTicket = async (e) => {
     e.preventDefault();
     setMensajeError('');
     setMensajeExito('');
     setEnviando(true);
     try {
-      const response = await ticketsAPI.crear(formData);
+      const response = await ticketsAPI.crear(formData, foto);
       setFormData({ titulo: '', descripcion: '', area: '', prioridad: 'media' });
+      quitarFoto();
       setMostrarForm(false);
       setMensajeExito(
         `${response.data.ticket.numeroTicket || 'Ticket'} creado correctamente`
@@ -86,7 +128,7 @@ export const Tickets = () => {
   const handleEliminarTicket = async (event, ticket) => {
     event.stopPropagation();
     const confirmado = window.confirm(
-      `¿Eliminar definitivamente ${ticket.numeroTicket || 'este ticket'}: "${ticket.titulo}"?\n\nTambién se eliminará su historial. Esta acción no se puede deshacer.`
+      `¿Eliminar definitivamente ${ticket.numeroTicket || 'este ticket'}: "${ticket.titulo}"?\n\nTambién se eliminarán su historial y su foto. Esta acción no se puede deshacer.`
     );
     if (!confirmado) return;
 
@@ -143,6 +185,7 @@ export const Tickets = () => {
           <button
             className={styles.botonCrear}
             onClick={() => {
+              if (mostrarForm) quitarFoto();
               setMostrarForm(!mostrarForm);
               setMensajeError('');
               setMensajeExito('');
@@ -209,6 +252,28 @@ export const Tickets = () => {
                 <option value="critica">Crítica</option>
               </select>
             </div>
+          </div>
+
+          <div className={styles.grupo}>
+            <label htmlFor="foto-ticket">Foto del daño (opcional, una sola)</label>
+            <input
+              ref={fotoInputRef}
+              id="foto-ticket"
+              type="file"
+              accept="image/jpeg,image/png"
+              capture="environment"
+              onChange={seleccionarFoto}
+              className={styles.campoFoto}
+            />
+            <p className={styles.ayudaFoto}>
+              En celular o tablet puedes usar la cámara trasera. Formatos JPG o PNG, máximo 5 MB.
+            </p>
+            {vistaPreviaFoto && (
+              <div className={styles.vistaPreviaFoto}>
+                <img src={vistaPreviaFoto} alt="Vista previa de la evidencia" />
+                <button type="button" onClick={quitarFoto}>Quitar foto</button>
+              </div>
+            )}
           </div>
 
           <button type="submit" className={styles.botonEnviar} disabled={enviando}>

@@ -162,7 +162,11 @@ export const validarSolicitud = (req, res, next) => {
     return res.status(414).json({ mensaje: 'La URL solicitada es demasiado larga' });
   }
 
-  if (metodosConJson.has(req.method) && !req.is('application/json')) {
+  const esFotoDeTicket = req.method === 'POST' &&
+    /^\/api\/tickets\/?$/.test(req.path) &&
+    req.is('multipart/form-data');
+
+  if (metodosConJson.has(req.method) && !req.is('application/json') && !esFotoDeTicket) {
     return res.status(415).json({ mensaje: 'El contenido debe enviarse como application/json' });
   }
 

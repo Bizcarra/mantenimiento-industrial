@@ -40,9 +40,20 @@ export const authAPI = {
 };
 export const ticketsAPI = {
   listar: (filtros = {}) => apiClient.get('/tickets', { params: filtros }),
-  crear: (datos) => apiClient.post('/tickets', datos),
+  crear: (datos, foto) => {
+    if (!foto) return apiClient.post('/tickets', datos);
+
+    const formulario = new FormData();
+    Object.entries(datos).forEach(([campo, valor]) => formulario.append(campo, valor));
+    formulario.append('foto', foto);
+    return apiClient.post('/tickets', formulario);
+  },
   eliminar: (id) => apiClient.delete(`/tickets/${id}`),
   obtener: (id) => apiClient.get(`/tickets/${id}`),
+  obtenerFoto: (id, config = {}) => apiClient.get(`/tickets/${id}/foto`, {
+    ...config,
+    responseType: 'blob',
+  }),
   asignar: (id, tecnicoAsignado) => apiClient.patch(`/tickets/${id}/asignar`, { tecnicoAsignado }),
   cambiarEstado: (id, nuevoEstado) => apiClient.patch(`/tickets/${id}/estado`, { nuevoEstado }),
   cambiarPrioridad: (id, nuevaPrioridad) => apiClient.patch(`/tickets/${id}/prioridad`, { nuevaPrioridad }),

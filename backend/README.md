@@ -75,6 +75,10 @@ npm start
 - JWT firmado con algoritmo, emisor y audiencia fijos; duración predeterminada de 8 horas.
 - Invalidación de sesiones al cambiar una contraseña.
 - Autorización por rol, propietario y técnico asignado para evitar accesos por ID.
+- Fotos privadas JPG/PNG de hasta 5 MB, validadas por contenido y dimensiones.
+- Eliminación de metadatos sensibles y comprobación de integridad con SHA-256.
+- Evidencias servidas solo desde un endpoint autenticado, nunca como archivos públicos.
+- Eliminación automática del ticket, historial y foto tres meses después de finalizarlo.
 - Errores públicos genéricos, sin trazas ni detalles de MongoDB.
 - Seed y borrado total bloqueados en producción.
 
@@ -101,13 +105,25 @@ npm test
 
 ### Tickets
 - `GET /api/tickets` - Listar tickets; admite estado, prioridad, área, `fechaDesde` y `fechaHasta`
-- `POST /api/tickets` - Crear nuevo ticket
-- `DELETE /api/tickets/:id` - Eliminar definitivamente un ticket y su historial (admin)
+- `POST /api/tickets` - Crear ticket con JSON o `multipart/form-data`; admite una `foto` opcional
+- `DELETE /api/tickets/:id` - Eliminar definitivamente ticket, historial y foto (admin)
 - `GET /api/tickets/:id` - Obtener ticket y su historial
+- `GET /api/tickets/:id/foto` - Obtener la foto con autenticación y autorización
 - `PATCH /api/tickets/:id/asignar` - Asignar a técnico
 - `PATCH /api/tickets/:id/estado` - Cambiar estado
 - `PATCH /api/tickets/:id/prioridad` - Cambiar prioridad
 - `PATCH /api/tickets/:id/solucion` - Registrar solución
+
+## Archivos y retención
+
+Las fotos se guardan fuera de MongoDB en `backend/storage/ticket-images` y esa carpeta está excluida de Git. Una copia de seguridad o migración debe incluirla junto con la base de datos.
+
+Los estados `resuelto` y `cerrado` programan la eliminación después de tres meses calendario. El proceso se ejecuta al iniciar el servidor y cada hora, y también retira imágenes huérfanas antiguas. Al reabrir el ticket se cancela la fecha de eliminación.
+
+Opcionalmente se pueden configurar:
+
+- `TICKET_UPLOAD_DIR`: ruta absoluta de almacenamiento privado.
+- `TICKET_CLEANUP_INTERVAL_MS`: intervalo de limpieza; mínimo 60000 ms y valor predeterminado de una hora.
 
 ### Dashboard
 - `GET /api/dashboard/stats` - Resúmenes, gráficos y tiempo promedio; admite rango de fechas (admin)

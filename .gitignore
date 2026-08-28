@@ -13,5 +13,6 @@ yarn-error.log*
 .idea/
 dist/
 build/
+backend/storage/
 .next/
 out/

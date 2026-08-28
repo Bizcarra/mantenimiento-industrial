@@ -1,5 +1,36 @@
 import mongoose from 'mongoose';
 
+const evidenciaFotoSchema = new mongoose.Schema(
+  {
+    archivo: {
+      type: String,
+      required: true,
+      match: /^[0-9a-f-]{36}\.(?:jpg|png)$/,
+    },
+    tipoMime: {
+      type: String,
+      required: true,
+      enum: ['image/jpeg', 'image/png'],
+    },
+    tamano: {
+      type: Number,
+      required: true,
+      min: 1,
+      max: 5 * 1024 * 1024,
+    },
+    sha256: {
+      type: String,
+      required: true,
+      match: /^[a-f0-9]{64}$/,
+    },
+    fechaCarga: {
+      type: Date,
+      default: Date.now,
+    },
+  },
+  { _id: false }
+);
+
 const ticketSchema = new mongoose.Schema(
   {
     numeroTicket: {
@@ -81,9 +112,29 @@ const ticketSchema = new mongoose.Schema(
       default: null,
       min: 0,
     },
+    evidenciaFoto: {
+      type: evidenciaFotoSchema,
+      default: null,
+    },
+    eliminarDespuesDe: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );
+
+ticketSchema.index({ eliminarDespuesDe: 1 });
+
+ticketSchema.set('toJSON', {
+  transform: (documento, objeto) => {
+    if (objeto.evidenciaFoto) {
+      delete objeto.evidenciaFoto.archivo;
+      delete objeto.evidenciaFoto.sha256;
+    }
+    return objeto;
+  },
+});
 
 ticketSchema.pre('validate', async function (next) {
   if (this.isNew && !this.numeroTicket) {

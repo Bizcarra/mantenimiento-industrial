@@ -5,12 +5,14 @@ Aplicación web para crear, asignar y dar seguimiento a solicitudes de mantenimi
 ## Funciones principales
 
 - Gestión de tickets con estados, prioridades, áreas, fechas e historial.
+- Una foto opcional del daño tomada desde la cámara o elegida desde el dispositivo.
 - Roles de administrador, técnico y solicitante.
 - Creación y administración de usuarios.
 - Dashboard con resúmenes, gráficos y tiempo promedio de resolución.
 - Actualización automática de la información mientras la aplicación permanece abierta.
 - Interfaz adaptable para computador, tablet y teléfono.
 - Autenticación con JWT, contraseñas cifradas, validación de datos y permisos por rol.
+- Retención automática: los tickets finalizados se eliminan después de tres meses.
 
 ## Funcionamiento por red local
 
@@ -108,6 +110,30 @@ http://IP-DE-LA-LAPTOP:5050/api/health
 
 `CREAR_ACCESO_RED_LOCAL.cmd` crea en el escritorio un acceso directo que abre directamente el mismo modo de red local. No crea ni inicia un modo separado.
 
+## Foto de evidencia y almacenamiento
+
+Al crear un ticket se puede adjuntar una sola foto opcional. En celulares y tablets, el selector permite abrir la cámara trasera o escoger una imagen existente.
+
+- Formatos permitidos: JPG y PNG.
+- Tamaño máximo: 5 MB.
+- Máximo: 40 megapíxeles.
+- La ubicación EXIF, comentarios y otros metadatos privados se eliminan antes de guardar.
+- El contenido se valida realmente; no se confía solamente en la extensión del archivo.
+- La foto recibe un nombre aleatorio y una huella SHA-256 para comprobar su integridad.
+- Solo el administrador, el solicitante propietario y el técnico asignado pueden solicitarla con una sesión válida.
+
+Las fotos se almacenan en `backend/storage/ticket-images`, una carpeta privada que no se publica directamente ni se incluye en Git. Para una copia de seguridad completa deben respaldarse tanto MongoDB como `backend/storage`.
+
+## Eliminación automática después de tres meses
+
+Cuando un ticket cambia a **Resuelto** o **Cerrado**, el sistema calcula una fecha de eliminación de tres meses calendario. Al llegar esa fecha se eliminan automáticamente:
+
+- El ticket.
+- Su historial de cambios.
+- Su foto de evidencia, si existe.
+
+La limpieza se ejecuta al iniciar el servidor y después cada hora. Si la laptop estaba apagada al vencer el plazo, el ticket se elimina la próxima vez que el servidor inicie. Si un ticket finalizado vuelve a abrirse, su eliminación se cancela; al resolverlo nuevamente comienza un nuevo período de tres meses.
+
 ## Credenciales de prueba
 
 Estas cuentas existen solamente después de ejecutar el seed:
@@ -149,14 +175,16 @@ El iniciador la revisa periódicamente. Cuando detecta el cambio, muestra el nue
 - Utiliza el sistema solamente en una red privada y confiable.
 - No abras ni redirijas el puerto 5050 desde el router hacia Internet.
 - No compartas el archivo `backend/.env` ni lo subas al repositorio.
+- No publiques la carpeta `backend/storage` como contenido estático.
 - Mantén Node.js, MongoDB y las dependencias actualizados.
-- Realiza copias de seguridad de la base de datos.
+- Realiza copias de seguridad de la base de datos y de las fotos antes de su vencimiento.
 
 ## Estructura principal
 
 ```text
 mantenimiento-industrial/
 ├── backend/                         API, seguridad y acceso a MongoDB
+│   └── storage/ticket-images/       Fotos privadas creadas durante el uso
 ├── frontend/                        Interfaz React compilada por Vite
 ├── scripts/
 │   ├── Iniciar-RedLocal.ps1         Inicio, detección de IP y código QR

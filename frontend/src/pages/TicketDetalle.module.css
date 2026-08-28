@@ -111,6 +111,46 @@
   word-break: break-word;
 }
 
+.evidencia {
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 8px;
+  margin: 16px 0;
+  padding: 14px;
+  background: #f7f8fc;
+  border: 1px solid #e3e6f0;
+  border-radius: 6px;
+}
+
+.evidencia strong {
+  color: #333;
+}
+
+.evidencia p,
+.evidencia small {
+  margin: 0;
+  color: #70788b;
+}
+
+.evidencia a {
+  display: block;
+  width: min(100%, 560px);
+}
+
+.evidencia img {
+  display: block;
+  width: 100%;
+  max-height: 460px;
+  object-fit: contain;
+  background: #16191f;
+  border-radius: 6px;
+}
+
+.evidencia .errorFoto {
+  color: #b32631;
+}
+
 .metadata {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
