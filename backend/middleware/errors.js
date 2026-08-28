@@ -3,8 +3,17 @@ const obtenerErrorHttp = (error) => {
     if (error.code === 'LIMIT_FILE_SIZE') {
       return { estado: 413, mensaje: 'La foto no puede superar 5 MB' };
     }
-    if (error.code === 'LIMIT_UNEXPECTED_FILE') {
+    if (error.code === 'LIMIT_UNEXPECTED_FILE' || error.code === 'LIMIT_FILE_COUNT') {
       return { estado: 400, mensaje: 'Solo se permite una foto en el campo "foto"' };
+    }
+    if (error.code === 'LIMIT_PART_COUNT' || error.code === 'LIMIT_FIELD_COUNT') {
+      return { estado: 400, mensaje: 'El formulario contiene más campos de los permitidos' };
+    }
+    if (error.code === 'LIMIT_FIELD_VALUE') {
+      return { estado: 400, mensaje: 'Uno de los campos del ticket es demasiado largo' };
+    }
+    if (error.code === 'LIMIT_FIELD_KEY') {
+      return { estado: 400, mensaje: 'El formulario contiene un nombre de campo no válido' };
     }
     return { estado: 400, mensaje: 'La carga de la foto no es válida' };
   }
