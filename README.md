@@ -1,802 +1,179 @@
-# 🏭 Sistema de Gestión de Mantenimiento Industrial
+# Sistema de Gestión de Mantenimiento Industrial
 
-**Versión:** 1.3.0 MVP  
-**Estado:** ✅ Completo y funcional
+Aplicación web para crear, asignar y dar seguimiento a solicitudes de mantenimiento. El sistema funciona únicamente en modo de red local: una laptop actúa como servidor y los demás equipos o teléfonos acceden desde el mismo Wi-Fi.
 
-Una plataforma web completa para gestionar solicitudes de mantenimiento en empresas industriales. Reemplaza canales informales (radio, WhatsApp) con un sistema centralizado, priorizado y auditable.
+## Funciones principales
 
----
+- Gestión de tickets con estados, prioridades, áreas, fechas e historial.
+- Roles de administrador, técnico y solicitante.
+- Creación y administración de usuarios.
+- Dashboard con resúmenes, gráficos y tiempo promedio de resolución.
+- Actualización automática de la información mientras la aplicación permanece abierta.
+- Interfaz adaptable para computador, tablet y teléfono.
+- Autenticación con JWT, contraseñas cifradas, validación de datos y permisos por rol.
 
-## 📋 Tabla de Contenidos
+## Funcionamiento por red local
 
-- [Características](#características)
-- [Stack Tecnológico](#stack-tecnológico)
-- [Requisitos Previos](#requisitos-previos)
-- [Instalación](#instalación)
-- [Configuración](#configuración)
-- [Ejecución](#ejecución)
-- [Estructura del Proyecto](#estructura-del-proyecto)
-- [Credenciales de Prueba](#credenciales-de-prueba)
-- [Desarrollo](#desarrollo)
-- [Contribución](#contribución)
-- [Notas Importantes](#notas-importantes)
+La laptop servidor ejecuta MongoDB, el backend y el frontend compilado. Todo se publica desde una sola dirección, por ejemplo:
 
----
-
-## ✨ Características
-
-### Core
-- ✅ CRUD completo de tickets/solicitudes
-- ✅ Sistema de usuarios con 3 roles (Admin, Técnico, Solicitante)
-- ✅ Autenticación segura con JWT
-- ✅ Control de acceso basado en roles (RBAC)
-- ✅ Asignación de tickets a técnicos
-
-### Funcionalidades Avanzadas
-- ✅ Cambio de estado de tickets (5 estados)
-- ✅ Priorización (4 niveles)
-- ✅ Registro de soluciones
-- ✅ Historial de cambios con trazabilidad
-- ✅ Cálculo automático de SLA (tiempo de resolución)
-- ✅ Dashboard con estadísticas
-- ✅ Filtros y búsqueda avanzada
-- ✅ Diseño responsivo (móvil, tablet, desktop)
-
-### Seguridad
-- ✅ Contraseñas encriptadas (bcryptjs)
-- ✅ JWT tokens con expiración
-- ✅ Validación de permisos en backend
-- ✅ CORS configurado
-- ✅ Validación de inputs
-
----
-
-## 💻 Stack Tecnológico
-
-### Frontend
-- **React 18.2** - Librería de UI
-- **Vite 4.5** - Build tool rápido
-- **React Router 6.15** - SPA routing
-- **Axios 1.6** - HTTP client
-- **CSS Modules** - Estilos encapsulados
-
-### Backend
-- **Node.js 16+** - Runtime
-- **Express 4.18** - Framework web
-- **MongoDB 8** - Base de datos NoSQL
-- **Mongoose 7.6** - ODM
-- **JWT 9.0** - Autenticación
-- **bcryptjs 2.4** - Hashing
-
-### DevTools
-- **nodemon 3.0** - Auto-reload
-- **Git** - Control de versiones
-
----
-
-## 📋 Requisitos Previos
-
-Antes de comenzar, asegúrate de tener instalado:
-
-- **Node.js** v16+ ([descargar](https://nodejs.org/))
-- **npm** v8+ (incluido con Node.js)
-- **MongoDB** corriendo localmente o en la nube ([descargar](https://www.mongodb.com/try/download/community))
-- **Git** ([descargar](https://git-scm.com/))
-
-### Verificar instalación
-
-```bash
-node --version    # v26.7.0+
-npm --version     # 12.0.2+
-git --version     # 2.x+
-mongosh --version # (opcional, para verificar MongoDB)
+```text
+http://192.168.1.9:5050
 ```
 
----
+Los demás dispositivos no deben instalar el proyecto. Solo necesitan:
 
-## 📥 Instalación
+1. Estar conectados al mismo Wi-Fi que la laptop servidor.
+2. Abrir en el navegador el enlace mostrado por el iniciador o escanear su código QR.
+3. Mantener encendida la laptop y abierta la ventana del servidor.
 
-### 1. Clonar el repositorio
+La IP depende de la red Wi-Fi. El iniciador la detecta automáticamente, muestra el enlace y genera nuevamente el QR cuando cambia.
 
-```bash
-# Clona el repositorio
-git clone https://github.com/tu-usuario/mantenimiento-industrial.git
+## Requisitos de la laptop servidor
 
-# Navega al proyecto
+- Windows 10 u 11.
+- Node.js 16 o superior y npm.
+- MongoDB instalado y ejecutándose, o una conexión configurada a MongoDB Atlas.
+- Git, si se desea descargar actualizaciones automáticamente.
+- Una red Wi-Fi privada.
+
+## Primera configuración
+
+### 1. Descargar el proyecto
+
+```powershell
+git clone <URL_DEL_REPOSITORIO>
 cd mantenimiento-industrial
 ```
 
-### 2. Instalar dependencias del Backend
+No es necesario ejecutar `npm install` manualmente: el iniciador de red local instala o actualiza las dependencias.
 
-```bash
-cd backend
-npm install
+### 2. Configurar MongoDB
+
+Si se usa MongoDB local, el servicio debe estar iniciado. La configuración predeterminada utiliza:
+
+```text
+mongodb://localhost:27017/mantenimiento
 ```
 
-**Si obtienes errores de versión o módulos faltantes:**
-```bash
-rm -rf node_modules package-lock.json
-npm cache clean --force
-npm install
+Si `backend/.env` no existe, el iniciador lo crea desde `backend/.env.example` y genera un secreto JWT. Para utilizar MongoDB Atlas, edita `MONGODB_URI` en `backend/.env`.
+
+### 3. Autorizar el firewall una sola vez
+
+Haz clic derecho sobre:
+
+```text
+CONFIGURAR_FIREWALL_RED_LOCAL.cmd
 ```
 
-### 3. Instalar dependencias del Frontend
+Selecciona **Ejecutar como administrador**. La regla permite el puerto 5050 únicamente para perfiles de red privada.
 
-```bash
-cd ../frontend
-npm install
-```
+### 4. Cargar datos de prueba (opcional)
 
-**Si tienes errores similares:**
-```bash
-rm -rf node_modules package-lock.json
-npm cache clean --force
-npm install
-```
+Este comando borra los datos locales existentes antes de crear los usuarios y tickets de prueba:
 
----
-
-## ⚙️ Configuración
-
-### Backend - Variables de Entorno
-
-1. **Si clonaste desde el repositorio**, verifica que el archivo `.env` exista:
-
-```bash
-cd backend
-```
-
-**Linux/macOS:**
-```bash
-cat .env
-```
-
-**Windows (PowerShell):**
 ```powershell
-Get-Content .env
-```
-
-2. **Si no existe el archivo `.env`**, créalo:
-
-**Linux/macOS:**
-```bash
-cat > .env << EOF
-MONGODB_URI=mongodb://localhost:27017/mantenimiento
-JWT_SECRET=tu_secret_jwt_muy_seguro_aqui
-PORT=5000
-NODE_ENV=development
-EOF
-```
-
-**Windows (PowerShell):**
-```powershell
-@"
-MONGODB_URI=mongodb://localhost:27017/mantenimiento
-JWT_SECRET=tu_secret_jwt_muy_seguro_aqui
-PORT=5000
-NODE_ENV=development
-"@ | Out-File -Encoding UTF8 .env
-```
-
-**Windows (CMD) o cualquier editor:**
-- Abre la carpeta `backend`
-- Click derecho → Nuevo → Archivo de texto
-- Renómbralo a `.env`
-- Abre con Notepad y pega el contenido anterior
-
-3. **Edita el archivo `.env` con tus valores** (si es necesario):
-
-```env
-MONGODB_URI=mongodb://localhost:27017/mantenimiento
-JWT_SECRET=tu_secret_jwt_muy_seguro_aqui
-PORT=5000
-NODE_ENV=development
-```
-
-**Opciones de MongoDB:**
-- **Local**: `mongodb://localhost:27017/mantenimiento`
-- **Atlas (Cloud)**: `mongodb+srv://usuario:password@cluster.mongodb.net/mantenimiento`
-
-### Frontend - Variables de Entorno
-
-1. **Verifica que el archivo `.env` exista**:
-
-```bash
-cd ../frontend
-```
-
-**Linux/macOS:**
-```bash
-cat .env
-```
-
-**Windows (PowerShell):**
-```powershell
-Get-Content .env
-```
-
-2. **Asegúrate de que contenga:**
-
-```env
-VITE_API_URL=http://localhost:5000
-```
-
-⚠️ **IMPORTANTE:** El frontend debe usar `/api` como baseURL en `src/services/api.js`:
-```javascript
-export const apiClient = axios.create({
-  baseURL: '/api',
-});
-```
-
-Esto permite que el proxy de Vite redirija correctamente al backend.
-
----
-
-## 🚀 Ejecución
-
-### Paso 0: Asegúrate de que MongoDB esté corriendo
-
-```bash
-# Si MongoDB está instalado localmente
-mongosh
-
-# Deberías ver el prompt de MongoDB
-# Escribe "exit" para salir
-```
-
-**Si no está instalado:**
-- Descárgalo de [mongodb.com](https://www.mongodb.com/try/download/community)
-- O usa [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) (nube, gratuito)
-
-### Terminal 1 - Backend
-
-```bash
-cd backend
-npm run dev
-```
-
-Verás:
-```
-Servidor ejecutándose en puerto 5000
-MongoDB conectado: localhost
-```
-
-**Verifica que funciona:**
-```bash
-curl http://localhost:5000/api/health
-# Respuesta: {"status":"API funcionando correctamente"}
-```
-
-### Terminal 2 - Inicializar Base de Datos (Primera vez)
-
-```bash
 cd backend
 npm run seed -- --confirm-reset-local-data
+cd ..
 ```
 
-Verás:
-```
-✓ 5 usuarios creados
-✓ 5 tickets creados
-✓ Base de datos inicializada exitosamente
-```
+No lo ejecutes sobre una base de datos que contenga información que necesites conservar.
 
-### Terminal 3 - Frontend
+## Iniciar la aplicación
 
-```bash
-cd frontend
-npm run dev
+Desde la raíz del proyecto, ejecuta:
+
+```text
+INICIAR_RED_LOCAL.cmd
 ```
 
-Verás:
+El proceso realiza lo siguiente:
+
+1. Comprueba Node.js, npm, Git y la estructura del proyecto.
+2. Busca actualizaciones con Git cuando la copia local permite hacerlo de forma segura.
+3. Instala las dependencias del backend y frontend.
+4. Compila el frontend.
+5. Detecta la dirección IPv4 privada de la red actual.
+6. Inicia la aplicación en el puerto 5050 para todos los dispositivos de la red.
+7. Muestra el enlace y un código QR para ingresar.
+8. Vigila los cambios de IP y actualiza el enlace y el QR automáticamente.
+
+La prueba de salud del servidor queda disponible en:
+
+```text
+http://IP-DE-LA-LAPTOP:5050/api/health
 ```
-➜  Local:   http://localhost:3000/
-➜  press h + enter to show help
-```
 
-### Acceder a la Aplicación
+## Acceso directo opcional
 
-Abre tu navegador en:
-```
-http://localhost:3000
-```
+`CREAR_ACCESO_RED_LOCAL.cmd` crea en el escritorio un acceso directo que abre directamente el mismo modo de red local. No crea ni inicia un modo separado.
 
-✅ **Debería funcionar sin errores 404**
+## Credenciales de prueba
 
----
+Estas cuentas existen solamente después de ejecutar el seed:
 
-## 📁 Estructura del Proyecto
+| Rol | Correo | Contraseña |
+| --- | --- | --- |
+| Administrador | `admin@mantenimiento.com` | `admin123` |
+| Técnico | `juan@mantenimiento.com` | `tecnico123` |
+| Técnico | `maria@mantenimiento.com` | `tecnico123` |
+| Solicitante | `pedro@empresa.com` | `user123` |
+| Solicitante | `laura@empresa.com` | `user123` |
 
-```
+Cambia estas contraseñas si la aplicación se utilizará con información real.
+
+## Solución de problemas
+
+### El teléfono no puede abrir el enlace
+
+- Confirma que ambos dispositivos estén en el mismo Wi-Fi.
+- Usa una red marcada como **Privada** en Windows.
+- Ejecuta una vez `CONFIGURAR_FIREWALL_RED_LOCAL.cmd` como administrador.
+- Evita redes de invitados, porque suelen impedir la comunicación entre dispositivos.
+- Comprueba que la terminal del servidor siga abierta.
+
+### El puerto 5050 está ocupado
+
+Cierra cualquier ventana anterior de `INICIAR_RED_LOCAL.cmd` y vuelve a iniciar. Solo debe existir una instancia del servidor.
+
+### MongoDB no conecta
+
+Comprueba que el servicio de MongoDB esté funcionando o revisa `MONGODB_URI` en `backend/.env`.
+
+### La IP cambió
+
+El iniciador la revisa periódicamente. Cuando detecta el cambio, muestra el nuevo enlace y reemplaza el QR. Usa siempre el enlace más reciente de la terminal.
+
+## Seguridad de red
+
+- Utiliza el sistema solamente en una red privada y confiable.
+- No abras ni redirijas el puerto 5050 desde el router hacia Internet.
+- No compartas el archivo `backend/.env` ni lo subas al repositorio.
+- Mantén Node.js, MongoDB y las dependencias actualizados.
+- Realiza copias de seguridad de la base de datos.
+
+## Estructura principal
+
+```text
 mantenimiento-industrial/
-├── backend/
-│   ├── models/
-│   │   ├── User.js           # Esquema de usuarios
-│   │   ├── Ticket.js         # Esquema de tickets
-│   │   └── HistoryLog.js     # Esquema de historial
-│   ├── routes/
-│   │   ├── auth.js           # Endpoints de autenticación
-│   │   ├── tickets.js        # Endpoints de tickets
-│   │   └── dashboard.js      # Endpoints de dashboard
-│   ├── middleware/
-│   │   └── auth.js           # JWT + RBAC
-│   ├── config/
-│   │   └── db.js             # Conexión a MongoDB
-│   ├── seeds/
-│   │   └── seedData.js       # Datos de prueba
-│   ├── server.js             # Servidor principal
-│   ├── package.json
-│   ├── .env.example
-│   ├── .env                  # (crear manualmente)
-│   ├── .gitignore
-│   └── README.md
-│
-├── frontend/
-│   ├── src/
-│   │   ├── pages/
-│   │   │   ├── Login.jsx
-│   │   │   ├── Tickets.jsx
-│   │   │   ├── TicketDetalle.jsx
-│   │   │   ├── Dashboard.jsx
-│   │   │   └── *.module.css
-│   │   ├── components/
-│   │   │   ├── Navbar.jsx
-│   │   │   ├── ProtectedRoute.jsx
-│   │   │   └── *.module.css
-│   │   ├── context/
-│   │   │   └── AuthContext.jsx
-│   │   ├── services/
-│   │   │   └── api.js
-│   │   ├── App.jsx
-│   │   ├── main.jsx
-│   │   └── index.css
-│   ├── index.html
-│   ├── vite.config.js
-│   ├── package.json
-│   ├── .env.example
-│   ├── .env.local             # (crear manualmente)
-│   ├── .gitignore
-│   └── README.md
-│
-├── README.md                  # Este archivo
-├── .gitignore
-└── docs/
-    ├── ARQUITECTURA.md
-    ├── CHECKLIST_FEATURES.md
-    ├── RESUMEN_EJECUTIVO.md
-    └── ...
+├── backend/                         API, seguridad y acceso a MongoDB
+├── frontend/                        Interfaz React compilada por Vite
+├── scripts/
+│   ├── Iniciar-RedLocal.ps1         Inicio, detección de IP y código QR
+│   └── Configurar-FirewallRedLocal.ps1
+├── INICIAR_RED_LOCAL.cmd            Iniciador principal
+├── CREAR_ACCESO_RED_LOCAL.cmd       Acceso directo opcional al modo de red
+└── CONFIGURAR_FIREWALL_RED_LOCAL.cmd
 ```
 
----
+## Comprobaciones para desarrollo
 
-## 👥 Credenciales de Prueba
-
-El seed crea automáticamente 5 usuarios. Úsalos para probar:
-
-### Admin (Acceso Total)
-- **Email:** admin@mantenimiento.com
-- **Contraseña:** admin123
-- **Acceso:** Todo
-
-### Técnico 1 (Gestiona Tickets)
-- **Email:** juan@mantenimiento.com
-- **Contraseña:** tecnico123
-- **Área:** Producción
-
-### Técnico 2
-- **Email:** maria@mantenimiento.com
-- **Contraseña:** tecnico123
-- **Área:** Eléctrica
-
-### Solicitante 1 (Crea Tickets)
-- **Email:** pedro@empresa.com
-- **Contraseña:** user123
-- **Área:** Producción
-
-### Solicitante 2
-- **Email:** laura@empresa.com
-- **Contraseña:** user123
-- **Área:** Almacén
-
----
-
-## 🔄 Desarrollo
-
-### Scripts Disponibles
-
-#### Backend
-
-```bash
-npm run dev      # Inicia con nodemon (auto-reload)
-npm run seed -- --confirm-reset-local-data  # Borra y carga datos de prueba locales
-npm start        # Inicia en modo producción
-```
-
-#### Frontend
-
-```bash
-npm run dev      # Inicia servidor de desarrollo
-npm run build    # Compila para producción
-npm run preview  # Previsualiza build
-```
-
-### Estructura de Ramas (Recomendada)
-
-```bash
-# Rama principal (código estable)
-main
-
-# Rama de desarrollo
-develop
-
-# Ramas de features
-feature/nombre-feature
-feature/login-v2
-
-# Ramas de correcciones
-bugfix/nombre-bug
-
-# Ramas de hotfix (producción)
-hotfix/nombre-critico
-```
-
-### Flujo de Desarrollo Git
-
-```bash
-# 1. Crear rama desde develop
-git checkout develop
-git pull origin develop
-git checkout -b feature/mi-feature
-
-# 2. Trabajar en la rama
-git add .
-git commit -m "Descripción del cambio"
-
-# 3. Pushear a GitHub
-git push origin feature/mi-feature
-
-# 4. Crear Pull Request en GitHub
-# (desde la interfaz de GitHub)
-
-# 5. Merge a develop después de review
-# 6. Merge a main cuando esté listo para producción
-```
-
----
-
-## 🤝 Contribución
-
-¿Quieres contribuir al proyecto? Consulta nuestra **[Guía de Contribución](CONTRIBUTING.md)** donde encontrarás:
-
-- Flujo de trabajo con Git
-- Convención de commits
-- Estándares de código
-- Proceso de Code Review
-- Cómo reportar bugs y sugerir mejoras
-
-**Inicio rápido:**
-
-```bash
-# 1. Crea una rama
-git checkout -b feature/mi-funcionalidad
-
-# 2. Haz tus cambios y commit
-git commit -m "feat: descripción del cambio"
-
-# 3. Push y crea PR
-git push origin feature/mi-funcionalidad
-```
-
----
-
-## 🐛 Troubleshooting
-
-### "Git Clone" - Repositorio no encontrado
-
-```bash
-# Asegúrate de reemplazar con la URL correcta de tu repositorio
-git clone https://github.com/tu-usuario/tu-repositorio.git
-cd mantenimiento-industrial
-```
-
-### "npm install" - Conflictos de versión o módulos faltantes
-
-**Linux/macOS:**
-```bash
-rm -rf node_modules package-lock.json
-npm cache clean --force
-npm install
-```
-
-**Windows (PowerShell):**
-```powershell
-Remove-Item -Recurse -Force node_modules
-Remove-Item package-lock.json
-npm cache clean --force
-npm install
-```
-
-**Hazlo en ambas carpetas (backend y frontend) si es necesario.**
-
-### "MongoDB connection refused"
-
-**Linux/macOS:**
-```bash
-mongosh
-# Deberías ver el prompt de MongoDB
-# Escribe "exit" para salir
-```
-
-**Windows (CMD o PowerShell):**
-```cmd
-mongosh
-```
-
-**Si no está instalado:**
-- Descárgalo de [mongodb.com](https://www.mongodb.com/try/download/community)
-- O usa [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) (nube, gratuito)
-
-**Para instalar en Windows:**
-- Descarga el instalador `.msi`
-- Ejecuta y sigue el asistente
-- MongoDB se instalará como servicio
-
-**Para instalar en macOS:**
-```bash
-brew tap mongodb/brew
-brew install mongodb-community
-brew services start mongodb-community
-```
-
-### "EADDRINUSE: address already in use :::5000"
-
-El puerto 5000 está en uso. Tienes dos opciones:
-
-**Opción 1:** Cierra la otra aplicación que usa el puerto
-
-**Opción 2:** Cambia el puerto en `.env`:
-```
-PORT=5001
-```
-
-Luego actualiza el frontend en `.env`:
-```
-VITE_API_URL=http://localhost:5001
-```
-
-### "Module not found: axios" o similar
-
-```bash
-# Ejecuta en la carpeta que falta (backend o frontend)
-npm install
-```
-
-### "Error al cargar tickets: 404" o "Cannot GET /api/tickets"
-
-Este es el error más común después de clonar. Verifica:
-
-1. **Backend está corriendo en puerto 5000:**
-
-**Linux/macOS/Windows:**
-```bash
-curl http://localhost:5000/api/health
-# O en Windows PowerShell:
-Invoke-WebRequest http://localhost:5000/api/health
-```
-
-Debería responder: `{"status":"API funcionando correctamente"}`
-
-2. **Frontend está usando la URL correcta:**
-   - Verifica que `src/services/api.js` tenga:
-   ```javascript
-   export const apiClient = axios.create({
-     baseURL: '/api',  // ← Debe ser '/api', NO 'http://localhost:5000'
-   });
-   ```
-
-3. **Vite está ejecutándose en puerto 3000:**
-   - Verifica que veas en terminal:
-   ```bash
-   ➜  Local:   http://localhost:3000/
-   ```
-
-4. **CORS está restringido en backend:**
-   - Desarrollo local permite `http://localhost:3000`.
-   - En producción configura `CORS_ORIGINS` con la URL exacta del frontend.
-
-5. **Limpia caché del navegador:**
-   - **Windows/Linux**: Presiona `Ctrl+Shift+Del`
-   - **macOS**: Presiona `Cmd+Shift+Del`
-   - Borra caché de los últimos 24 horas
-   - Recarga la página
-
-### "Cannot find module" después de clonar
-
-**Linux/macOS:**
-```bash
-cd backend
-rm -rf node_modules package-lock.json
-npm cache clean --force
-npm install
-
-cd ../frontend
-rm -rf node_modules package-lock.json
-npm cache clean --force
-npm install
-```
-
-**Windows (PowerShell):**
 ```powershell
 cd backend
-Remove-Item -Recurse -Force node_modules
-Remove-Item package-lock.json
-npm cache clean --force
-npm install
+npm test
 
 cd ../frontend
-Remove-Item -Recurse -Force node_modules
-Remove-Item package-lock.json
-npm cache clean --force
-npm install
+npm run build
 ```
 
-### Frontend muestra errores de rutas (404, rutas incorrectas)
-
-1. **Verifica que ambos servidores estén corriendo:**
-   - Backend: http://localhost:5000/api/health ✅
-   - Frontend: http://localhost:3000 ✅
-
-2. **Revisa la consola del navegador:**
-   - **Windows/Linux**: Presiona `F12` → "Network" tab
-   - **macOS**: Presiona `Cmd+Option+I` → "Network" tab
-   - Los requests a `/api/*` deben ir a `localhost:5000`
-   - Si ves `/5000/` en la URL, hay un problema de configuración
-
-3. **Borra caché y cookies:**
-   - **Windows/Linux**: `Ctrl+Shift+Del`
-   - **macOS**: `Cmd+Shift+Del`
-   - Marca todo y limpia
-   - Recarga la página (`Ctrl+R` o `Cmd+R`)
-
-### Datos de prueba no aparecen
-
-```bash
-cd backend
-npm run seed -- --confirm-reset-local-data
-```
-
-### "ReferenceError: export is not defined"
-
-Verifica que los archivos tengan las extensiones correctas:
-- Backend: `.js`
-- Frontend: `.jsx` para componentes React
-
-Los imports también deben ser correctos:
-```javascript
-// ✅ Correcto (ES Modules)
-import express from 'express';
-export default router;
-
-// ❌ Incorrecto (CommonJS)
-const express = require('express');
-module.exports = router;
-```
-
-### En Windows: "node no se reconoce como comando"
-
-Node.js no está instalado o no está en el PATH:
-
-1. Descarga e instala Node.js desde [nodejs.org](https://nodejs.org/)
-2. Reinicia tu terminal/PowerShell
-3. Verifica: `node --version`
-
----
-
-## 📊 Endpoints API
-
-### Autenticación
-- `POST /api/auth/login` - Login
-- `POST /api/auth/registro` - Registrar usuario
-- `GET /api/auth/me` - Obtener usuario actual
-
-### Tickets
-- `GET /api/tickets` - Listar tickets (con filtros)
-- `POST /api/tickets` - Crear ticket
-- `GET /api/tickets/:id` - Obtener detalle
-- `PATCH /api/tickets/:id/estado` - Cambiar estado
-- `PATCH /api/tickets/:id/prioridad` - Cambiar prioridad
-- `PATCH /api/tickets/:id/asignar` - Asignar técnico
-- `PATCH /api/tickets/:id/finalizacion` - Registrar solución
-
-### Dashboard
-- `GET /api/dashboard/stats` - Estadísticas generales
-- `GET /api/dashboard/tecnicos-desempenio` - Desempeño técnicos
-
----
-
-## 📝 Roles y Permisos
-
-| Acción | Admin | Técnico | Solicitante |
-|--------|-------|---------|------------|
-| Ver todos los tickets | ✅ | ❌ | ❌ |
-| Ver tickets asignados | ✅ | ✅ | ❌ |
-| Ver propios tickets | ✅ | ✅ | ✅ |
-| Crear tickets | ✅ | ❌ | ✅ |
-| Cambiar estado | ✅ | ✅ | ❌ |
-| Cambiar prioridad | ✅ | ❌ | ❌ |
-| Asignar técnico | ✅ | ❌ | ❌ |
-| Registrar solución | ✅ | ✅ | ❌ |
-| Ver soluciones | ✅ | ✅ | ✅ |
-| Ver dashboard | ✅ | ❌ | ❌ |
-
----
-
-## 📚 Documentación Adicional
-
-- **[ARQUITECTURA.md](ARQUITECTURA.md)** - Diagramas de flujo y estructura técnica
-- **[INICIO_RAPIDO.md](INICIO_RAPIDO.md)** - Guía de inicio rápido (5 minutos)
-- **[DEPENDENCIAS.md](DEPENDENCIAS.md)** - Stack tecnológico detallado
-- **[CONTRIBUTING.md](CONTRIBUTING.md)** - Guía para contribuir al proyecto
-- **[backend/README.md](backend/README.md)** - Documentación específica del backend
-- **[frontend/README.md](frontend/README.md)** - Documentación específica del frontend
-
----
-
-## 🔐 Notas Importantes
-
-### Seguridad
-- ⚠️ **NUNCA** comitas el archivo `.env` (usa `.env.example`)
-- ⚠️ Cambia `JWT_SECRET` en producción
-- ⚠️ Usa variables de entorno para credenciales
-- ⚠️ Valida todas las entradas en backend
-
-### Performance
-- Usa índices en MongoDB para queries frecuentes
-- Implementa paginación para listas grandes
-- Cachea datos cuando sea posible
-- Optimiza imágenes
-
-### Base de Datos
-- Haz backups regularmente
-- Usa MongoDB Atlas para producción
-- Configura índices apropiados
-- Monitorea el crecimiento de datos
-
----
-
-## 📞 Soporte y Contacto
-
-Si encuentras problemas:
-
-1. Verifica el [Troubleshooting](#troubleshooting)
-2. Revisa la [Documentación](docs/)
-3. Abre un issue en GitHub
-4. Contacta al equipo de desarrollo
-
----
-
-## 📄 Licencia
-
-Este proyecto es privado y propiedad de [Tu Empresa]. 
-
----
-
-## ✅ Checklist para Nuevos Compañeros
-
-- [ ] Cloné el repositorio
-- [ ] Instalé Node.js v16+
-- [ ] Instalé MongoDB (local o Atlas)
-- [ ] Ejecuté `npm install` en backend y frontend
-- [ ] Creé archivos `.env` desde `.env.example`
-- [ ] Ejecuté `npm run seed -- --confirm-reset-local-data` en backend local
-- [ ] Ejecuté `npm run dev` en backend (Puerto 5000)
-- [ ] Ejecuté `npm run dev` en frontend (Puerto 3000)
-- [ ] Accedí a http://localhost:3000
-- [ ] Probé login con credenciales de prueba
-- [ ] Creé una rama para trabajar
-
----
-
-**¡Bienvenido al proyecto!** 🚀
-
-Si tienes dudas, pregunta a tu compañero de equipo o abre un issue en GitHub.
+Para el uso normal de la aplicación no se levantan servidores separados en los puertos 3000 y 5000; `INICIAR_RED_LOCAL.cmd` sirve la interfaz y la API desde el puerto 5050.
