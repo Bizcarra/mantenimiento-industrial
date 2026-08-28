@@ -40,6 +40,9 @@ export const TicketDetalle = () => {
   const [solucion, setSolucion] = useState('');
   const [modalAbierto, setModalAbierto] = useState(false);
   const [ultimaActualizacion, setUltimaActualizacion] = useState(null);
+  const [fotoUrl, setFotoUrl] = useState('');
+  const [cargandoFoto, setCargandoFoto] = useState(false);
+  const [errorFoto, setErrorFoto] = useState('');
   const ticketActualRef = useRef(null);
   const estadoSeleccionadoRef = useRef('');
   const prioridadSeleccionadaRef = useRef('');
@@ -90,6 +93,42 @@ export const TicketDetalle = () => {
   }, [cargarDetalle]);
 
   useAutoRefresh(() => cargarDetalle({ silencioso: true }));
+
+  const fechaFoto = ticket?.evidenciaFoto?.fechaCarga || '';
+  useEffect(() => {
+    if (!fechaFoto) {
+      setFotoUrl('');
+      setCargandoFoto(false);
+      setErrorFoto('');
+      return undefined;
+    }
+
+    const controlador = new AbortController();
+    let urlTemporal = '';
+    setFotoUrl('');
+    setCargandoFoto(true);
+    setErrorFoto('');
+
+    ticketsAPI.obtenerFoto(id, { signal: controlador.signal })
+      .then((response) => {
+        urlTemporal = URL.createObjectURL(response.data);
+        setFotoUrl(urlTemporal);
+      })
+      .catch((error) => {
+        if (error.code !== 'ERR_CANCELED') {
+          console.error('Error al cargar la foto del ticket:', error);
+          setErrorFoto('No fue posible cargar la foto de evidencia.');
+        }
+      })
+      .finally(() => {
+        if (!controlador.signal.aborted) setCargandoFoto(false);
+      });
+
+    return () => {
+      controlador.abort();
+      if (urlTemporal) URL.revokeObjectURL(urlTemporal);
+    };
+  }, [id, fechaFoto]);
 
   const handleCambiarEstado = async () => {
     try {
@@ -202,6 +241,20 @@ export const TicketDetalle = () => {
         <div className={styles.panel}>
           <p className={styles.descripcion}>{ticket.descripcion}</p>
 
+          {ticket.evidenciaFoto && (
+            <div className={styles.evidencia}>
+              <strong>Foto de evidencia</strong>
+              {cargandoFoto && <p>Cargando foto protegida...</p>}
+              {errorFoto && <p className={styles.errorFoto}>{errorFoto}</p>}
+              {fotoUrl && (
+                <a href={fotoUrl} target="_blank" rel="noreferrer">
+                  <img src={fotoUrl} alt={`Evidencia del daño en ${ticket.numeroTicket}`} />
+                </a>
+              )}
+              <small>Solo es visible para usuarios autorizados de este ticket.</small>
+            </div>
+          )}
+
           <div className={styles.metadata}>
             <div><strong>Área:</strong> {ticket.area}</div>
             <div><strong>Solicitante:</strong> {ticket.solicitante?.nombre}</div>
@@ -215,6 +268,12 @@ export const TicketDetalle = () => {
             )}
             {ticket.tiempoTranscurridoMinutos && (
               <div><strong>Tiempo:</strong> {ticket.tiempoTranscurridoMinutos} min</div>
+            )}
+            {ticket.eliminarDespuesDe && (
+              <div>
+                <strong>Eliminación automática:</strong>
+                {formatearFechaHora(ticket.eliminarDespuesDe)}
+              </div>
             )}
           </div>
 

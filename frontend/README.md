@@ -44,6 +44,8 @@ src/
 
 - Autenticación con JWT.
 - Gestión de tickets y usuarios según el rol.
+- Captura o selección de una foto opcional al crear el ticket.
+- Visualización autenticada de la evidencia en el detalle.
 - Historial, filtros por fecha y dashboard.
 - Actualización automática de los datos visibles.
 - Diseño adaptable para teléfono, tablet y computador.

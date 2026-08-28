@@ -101,6 +101,23 @@ test('exige JSON y limita el tamaño del cuerpo', async () => {
   assert.equal(cuerpoGrande.status, 413);
 });
 
+test('permite multipart únicamente al crear tickets', async () => {
+  const cuerpoMultipart = '--prueba--\r\n';
+  const crearTicket = await fetch(`${urlBase}/api/tickets`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'multipart/form-data; boundary=prueba' },
+    body: cuerpoMultipart,
+  });
+  assert.equal(crearTicket.status, 401);
+
+  const otraRuta = await fetch(`${urlBase}/api/users`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'multipart/form-data; boundary=prueba' },
+    body: cuerpoMultipart,
+  });
+  assert.equal(otraRuta.status, 415);
+});
+
 test('no filtra errores internos ni rutas de Express', async () => {
   const jsonInvalido = await fetch(`${urlBase}/api/auth/login`, {
     method: 'POST',

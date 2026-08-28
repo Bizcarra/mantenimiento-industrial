@@ -99,6 +99,55 @@
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
+.grupo .campoFoto {
+  padding: 8px;
+  color: #4f5668;
+  background: #fafbff;
+  border: 1px dashed #aeb5d5;
+}
+
+.campoFoto::file-selector-button {
+  margin-right: 10px;
+  padding: 8px 12px;
+  color: #fff;
+  background: #667eea;
+  border: 0;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.ayudaFoto {
+  margin: 6px 0 0;
+  color: #737b8f;
+  font-size: 12px;
+}
+
+.vistaPreviaFoto {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 10px;
+  background: #f7f8fc;
+  border-radius: 6px;
+}
+
+.vistaPreviaFoto img {
+  width: 96px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 5px;
+}
+
+.vistaPreviaFoto button {
+  padding: 8px 12px;
+  color: #a62d36;
+  background: #fff;
+  border: 1px solid #e6bfc3;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
 .botonEnviar {
   background: #4caf50;
   color: white;
@@ -379,6 +428,17 @@
   .footer {
     flex-wrap: wrap;
     gap: 10px;
+  }
+
+  .vistaPreviaFoto {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .vistaPreviaFoto img {
+    width: 100%;
+    height: auto;
+    max-height: 260px;
   }
 }
 

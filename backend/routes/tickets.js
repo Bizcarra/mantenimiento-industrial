@@ -4,10 +4,21 @@ import Ticket from '../models/Ticket.js';
 import User from '../models/User.js';
 import HistoryLog from '../models/HistoryLog.js';
 import { authMiddleware, requireRole } from '../middleware/auth.js';
+import { cargarFotoTicket, limiteCreacionTickets } from '../middleware/ticketUpload.js';
 import { crearRangoFechas } from '../utils/dateFilters.js';
+import {
+  eliminarEvidenciaTicket,
+  guardarEvidenciaTicket,
+  leerEvidenciaTicket,
+} from '../services/ticketImages.js';
+import {
+  calcularFechaEliminacion,
+  eliminarRecursosAsociados,
+} from '../services/ticketRetention.js';
 
 const router = express.Router();
 const ESTADOS = ['abierto', 'en_progreso', 'pausado', 'resuelto', 'cerrado'];
+const ESTADOS_FINALIZADOS = new Set(['resuelto', 'cerrado']);
 const PRIORIDADES = ['baja', 'media', 'alta', 'critica'];
 
 const textoValido = (valor, minimo, maximo) =>
@@ -30,40 +41,59 @@ const puedeModificarTicket = (usuario, ticket) =>
   usuario.rol === 'admin' ||
   (usuario.rol === 'tecnico' && ticket.tecnicoAsignado?.toString() === usuario.id);
 
-router.post('/', authMiddleware, requireRole('admin', 'solicitante', 'tecnico'), async (req, res, next) => {
-  try {
-    const { titulo, descripcion, area, prioridad = 'media' } = req.body || {};
-    if (
-      !textoValido(titulo, 3, 120) ||
-      !textoValido(descripcion, 10, 5000) ||
-      !textoValido(area, 2, 100) ||
-      !PRIORIDADES.includes(prioridad)
-    ) {
-      return res.status(400).json({ mensaje: 'Los datos del ticket no son válidos' });
+router.post(
+  '/',
+  authMiddleware,
+  requireRole('admin', 'solicitante', 'tecnico'),
+  limiteCreacionTickets,
+  cargarFotoTicket,
+  async (req, res, next) => {
+    let evidenciaGuardada = null;
+    let nuevoTicket = null;
+    try {
+      const { titulo, descripcion, area, prioridad = 'media' } = req.body || {};
+      if (
+        !textoValido(titulo, 3, 120) ||
+        !textoValido(descripcion, 10, 5000) ||
+        !textoValido(area, 2, 100) ||
+        !PRIORIDADES.includes(prioridad)
+      ) {
+        return res.status(400).json({ mensaje: 'Los datos del ticket no son válidos' });
+      }
+
+      if (req.file) evidenciaGuardada = await guardarEvidenciaTicket(req.file);
+
+      nuevoTicket = await Ticket.create({
+        titulo: titulo.trim(),
+        descripcion: descripcion.trim(),
+        area: area.trim(),
+        prioridad,
+        solicitante: req.usuario.id,
+        evidenciaFoto: evidenciaGuardada,
+      });
+
+      await nuevoTicket.populate('solicitante', 'nombre email');
+      await HistoryLog.create({
+        ticket: nuevoTicket._id,
+        usuarioQueCambia: req.usuario.id,
+        tipoDeAccion: 'creacion',
+        detalles: `Ticket creado: ${nuevoTicket.titulo}`,
+        datosNuevos: nuevoTicket.toObject(),
+      });
+
+      res.status(201).json({ mensaje: 'Ticket creado exitosamente', ticket: nuevoTicket });
+    } catch (error) {
+      if (nuevoTicket?._id) {
+        await Ticket.deleteOne({ _id: nuevoTicket._id }).catch(() => {});
+        await HistoryLog.deleteMany({ ticket: nuevoTicket._id }).catch(() => {});
+      }
+      if (evidenciaGuardada) {
+        await eliminarEvidenciaTicket(evidenciaGuardada).catch(() => {});
+      }
+      next(error);
     }
-
-    const nuevoTicket = await Ticket.create({
-      titulo: titulo.trim(),
-      descripcion: descripcion.trim(),
-      area: area.trim(),
-      prioridad,
-      solicitante: req.usuario.id,
-    });
-
-    await nuevoTicket.populate('solicitante', 'nombre email');
-    await HistoryLog.create({
-      ticket: nuevoTicket._id,
-      usuarioQueCambia: req.usuario.id,
-      tipoDeAccion: 'creacion',
-      detalles: `Ticket creado: ${nuevoTicket.titulo}`,
-      datosNuevos: nuevoTicket.toObject(),
-    });
-
-    res.status(201).json({ mensaje: 'Ticket creado exitosamente', ticket: nuevoTicket });
-  } catch (error) {
-    next(error);
   }
-});
+);
 
 router.get('/', authMiddleware, async (req, res, next) => {
   try {
@@ -105,6 +135,38 @@ router.get('/', authMiddleware, async (req, res, next) => {
       .limit(200);
 
     res.json(tickets);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/:id/foto', authMiddleware, async (req, res, next) => {
+  try {
+    if (!idValido(req.params.id)) {
+      return res.status(400).json({ mensaje: 'Identificador de ticket no válido' });
+    }
+
+    const ticket = await Ticket.findById(req.params.id).select(
+      '_id numeroTicket solicitante tecnicoAsignado evidenciaFoto'
+    );
+    if (!ticket || !esPropietarioOTecnico(req.usuario, ticket)) {
+      return res.status(404).json({ mensaje: 'Ticket no encontrado' });
+    }
+    if (!ticket.evidenciaFoto) {
+      return res.status(404).json({ mensaje: 'Este ticket no tiene una foto de evidencia' });
+    }
+
+    const contenido = await leerEvidenciaTicket(ticket.evidenciaFoto);
+    const extension = ticket.evidenciaFoto.tipoMime === 'image/png' ? 'png' : 'jpg';
+    res.set({
+      'Content-Type': ticket.evidenciaFoto.tipoMime,
+      'Content-Length': String(contenido.length),
+      'Content-Disposition': `inline; filename="evidencia-ticket.${extension}"`,
+      'Content-Security-Policy': "default-src 'none'; sandbox",
+      'Cross-Origin-Resource-Policy': 'same-origin',
+      'Cache-Control': 'private, no-store',
+    });
+    return res.send(contenido);
   } catch (error) {
     next(error);
   }
@@ -166,9 +228,15 @@ router.patch('/:id/asignar', authMiddleware, requireRole('admin'), async (req, r
     }
 
     const tecnicoAnterior = ticket.tecnicoAsignado;
+    const estadoAnterior = ticket.estado;
     ticket.tecnicoAsignado = tecnico._id;
     ticket.fechaAsignacion = new Date();
     ticket.estado = 'en_progreso';
+    if (ESTADOS_FINALIZADOS.has(estadoAnterior)) {
+      ticket.fechaResolucion = null;
+      ticket.tiempoTranscurridoMinutos = null;
+      ticket.eliminarDespuesDe = null;
+    }
     await ticket.save();
     await ticket.populate('solicitante tecnicoAsignado', 'nombre email');
 
@@ -205,12 +273,21 @@ router.patch('/:id/estado', authMiddleware, requireRole('admin', 'tecnico'), asy
     }
     ticket.estado = nuevoEstado;
 
-    if (nuevoEstado === 'resuelto') {
-      ticket.tiempoTranscurridoMinutos = Math.round((new Date() - ticket.fechaSolicitud) / 60000);
+    const estabaFinalizado = ESTADOS_FINALIZADOS.has(estadoAnterior);
+    const quedaFinalizado = ESTADOS_FINALIZADOS.has(nuevoEstado);
+
+    if (quedaFinalizado && !estabaFinalizado) {
       ticket.fechaResolucion = new Date();
-    } else if (estadoAnterior === 'resuelto') {
+      ticket.tiempoTranscurridoMinutos = Math.round(
+        (ticket.fechaResolucion - ticket.fechaSolicitud) / 60000
+      );
+      ticket.eliminarDespuesDe = calcularFechaEliminacion(ticket.fechaResolucion);
+    } else if (!quedaFinalizado && estabaFinalizado) {
       ticket.tiempoTranscurridoMinutos = null;
       ticket.fechaResolucion = null;
+      ticket.eliminarDespuesDe = null;
+    } else if (quedaFinalizado && ticket.fechaResolucion && !ticket.eliminarDespuesDe) {
+      ticket.eliminarDespuesDe = calcularFechaEliminacion(ticket.fechaResolucion);
     }
 
     await ticket.save();
@@ -315,11 +392,13 @@ router.delete('/:id', authMiddleware, requireRole('admin'), async (req, res, nex
       return res.status(400).json({ mensaje: 'Identificador de ticket no válido' });
     }
 
-    const ticket = await Ticket.findById(req.params.id).select('_id numeroTicket titulo');
+    const ticket = await Ticket.findById(req.params.id).select(
+      '_id numeroTicket titulo evidenciaFoto'
+    );
     if (!ticket) return res.status(404).json({ mensaje: 'Ticket no encontrado' });
 
-    await HistoryLog.deleteMany({ ticket: ticket._id });
     await ticket.deleteOne();
+    await eliminarRecursosAsociados(ticket);
 
     res.json({
       mensaje: `${ticket.numeroTicket || 'Ticket'} eliminado exitosamente`,
