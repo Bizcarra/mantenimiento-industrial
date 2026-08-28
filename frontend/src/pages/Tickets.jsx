@@ -4,6 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import { ticketsAPI } from '../services/api';
 import { FiltroFecha } from '../components/FiltroFecha';
 import { useAutoRefresh } from '../hooks/useAutoRefresh';
+import Swal from 'sweetalert2';
 import styles from './Tickets.module.css';
 
 export const Tickets = () => {
@@ -127,10 +128,20 @@ export const Tickets = () => {
 
   const handleEliminarTicket = async (event, ticket) => {
     event.stopPropagation();
-    const confirmado = window.confirm(
-      `¿Eliminar definitivamente ${ticket.numeroTicket || 'este ticket'}: "${ticket.titulo}"?\n\nTambién se eliminarán su historial y su foto. Esta acción no se puede deshacer.`
-    );
-    if (!confirmado) return;
+
+    const result = await Swal.fire({
+      title: '¿Estás seguro?',
+      html: `Eliminarás definitivamente el ticket:<br><strong>${ticket.numeroTicket || 'este ticket'}</strong>: "${ticket.titulo}"<br><br>También se eliminarán su historial y su foto.<br>Esta acción no se puede deshacer.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+      reverseButtons: true,
+    });
+
+    if (!result.isConfirmed) return;
 
     setEliminandoId(ticket._id);
     setMensajeError('');
@@ -138,9 +149,23 @@ export const Tickets = () => {
     try {
       const response = await ticketsAPI.eliminar(ticket._id);
       setTickets((actuales) => actuales.filter((item) => item._id !== ticket._id));
-      setMensajeExito(response.data.mensaje);
+
+      Swal.fire({
+        title: '¡Eliminado!',
+        text: response.data.mensaje || 'El ticket ha sido eliminado correctamente.',
+        icon: 'success',
+        timer: 2000,
+        showConfirmButton: false,
+      });
+
       await cargarTickets({ silencioso: true });
     } catch (error) {
+      Swal.fire({
+        title: 'Error',
+        text: error.response?.data?.mensaje || 'No fue posible eliminar el ticket.',
+        icon: 'error',
+        confirmButtonColor: '#3085d6',
+      });
       setMensajeError(
         error.response?.data?.mensaje || 'No fue posible eliminar el ticket.'
       );
