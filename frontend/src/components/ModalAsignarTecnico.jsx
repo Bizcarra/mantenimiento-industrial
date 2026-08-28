@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { usuariosAPI } from '../services/api';
+import { useAutoRefresh } from '../hooks/useAutoRefresh';
 import styles from './ModalAsignarTecnico.module.css';
 
 export const ModalAsignarTecnico = ({ isOpen, onClose, onSeleccionar, tecnicoActual }) => {
@@ -9,27 +10,34 @@ export const ModalAsignarTecnico = ({ isOpen, onClose, onSeleccionar, tecnicoAct
   const [busqueda, setBusqueda] = useState('');
   const [asignandoId, setAsignandoId] = useState('');
 
+  const cargarTecnicos = useCallback(async ({ silencioso = false } = {}) => {
+    try {
+      if (!silencioso) {
+        setCargando(true);
+        setError(null);
+      }
+      const response = await usuariosAPI.obtenerTecnicos();
+      setTecnicos(response.data);
+    } catch (err) {
+      console.error('Error al cargar técnicos:', err);
+      if (!silencioso) setError('Error al cargar la lista de técnicos');
+    } finally {
+      if (!silencioso) setCargando(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (isOpen) {
       setAsignandoId('');
       setError(null);
       cargarTecnicos();
     }
-  }, [isOpen]);
+  }, [cargarTecnicos, isOpen]);
 
-  const cargarTecnicos = async () => {
-    try {
-      setCargando(true);
-      setError(null);
-      const response = await usuariosAPI.obtenerTecnicos();
-      setTecnicos(response.data);
-    } catch (err) {
-      console.error('Error al cargar técnicos:', err);
-      setError('Error al cargar la lista de técnicos');
-    } finally {
-      setCargando(false);
-    }
-  };
+  useAutoRefresh(
+    () => cargarTecnicos({ silencioso: true }),
+    { activo: isOpen }
+  );
 
   const tecnicosFiltrados = tecnicos.filter(
     (tecnico) =>
@@ -60,11 +68,17 @@ export const ModalAsignarTecnico = ({ isOpen, onClose, onSeleccionar, tecnicoAct
 
   return (
     <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+      <div className={styles.modal} onClick={(event) => event.stopPropagation()}>
         <div className={styles.header}>
           <h2>Asignar Técnico</h2>
-          <button className={styles.closeBtn} onClick={onClose} disabled={Boolean(asignandoId)}>
-            ✕
+          <button
+            type="button"
+            className={styles.closeBtn}
+            onClick={onClose}
+            disabled={Boolean(asignandoId)}
+            aria-label="Cerrar"
+          >
+            ×
           </button>
         </div>
 
@@ -72,10 +86,10 @@ export const ModalAsignarTecnico = ({ isOpen, onClose, onSeleccionar, tecnicoAct
           {error && <div className={styles.error}>{error}</div>}
 
           <input
-            type="text"
+            type="search"
             placeholder="Buscar técnico por nombre o email..."
             value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
+            onChange={(event) => setBusqueda(event.target.value)}
             className={styles.busqueda}
           />
 
@@ -119,7 +133,12 @@ export const ModalAsignarTecnico = ({ isOpen, onClose, onSeleccionar, tecnicoAct
         </div>
 
         <div className={styles.footer}>
-          <button onClick={onClose} className={styles.btnCancelar} disabled={Boolean(asignandoId)}>
+          <button
+            type="button"
+            onClick={onClose}
+            className={styles.btnCancelar}
+            disabled={Boolean(asignandoId)}
+          >
             Cancelar
           </button>
         </div>

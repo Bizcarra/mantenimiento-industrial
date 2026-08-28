@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { dashboardAPI } from '../services/api';
 import { FiltroFecha } from '../components/FiltroFecha';
+import { useAutoRefresh } from '../hooks/useAutoRefresh';
 import styles from './Dashboard.module.css';
 
 const etiquetas = {
@@ -101,11 +102,9 @@ export const Dashboard = () => {
 
   useEffect(() => {
     cargarDashboard();
-    const temporizador = window.setInterval(() => {
-      if (!document.hidden) cargarDashboard({ silencioso: true });
-    }, 30000);
-    return () => window.clearInterval(temporizador);
   }, [cargarDashboard]);
+
+  useAutoRefresh(() => cargarDashboard({ silencioso: true }));
 
   return (
     <main className={styles.container}>

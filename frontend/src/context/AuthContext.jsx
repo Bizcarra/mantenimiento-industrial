@@ -1,5 +1,6 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useCallback, useEffect, useState } from 'react';
 import { authAPI } from '../services/api';
+import { useAutoRefresh } from '../hooks/useAutoRefresh';
 
 export const AuthContext = createContext();
 
@@ -8,26 +9,40 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [cargando, setCargando] = useState(true);
 
+  const limpiarSesion = useCallback(() => {
+    setUsuario(null);
+    setToken(null);
+    localStorage.removeItem('token');
+  }, []);
+
+  const verificarToken = useCallback(async ({ silencioso = false } = {}) => {
+    try {
+      const response = await authAPI.me();
+      setUsuario(response.data);
+    } catch (error) {
+      const estado = error.response?.status;
+      if (estado === 401 || estado === 403) {
+        limpiarSesion();
+      } else {
+        console.error('No fue posible actualizar la sesión:', error);
+      }
+    } finally {
+      if (!silencioso) setCargando(false);
+    }
+  }, [limpiarSesion]);
+
   useEffect(() => {
     if (token) {
       verificarToken();
     } else {
       setCargando(false);
     }
-  }, [token]);
+  }, [token, verificarToken]);
 
-  const verificarToken = async () => {
-    try {
-      const response = await authAPI.me();
-      setUsuario(response.data);
-    } catch (error) {
-      console.error('Token inválido:', error);
-      setToken(null);
-      localStorage.removeItem('token');
-    } finally {
-      setCargando(false);
-    }
-  };
+  useAutoRefresh(
+    () => verificarToken({ silencioso: true }),
+    { activo: Boolean(token), intervalo: 60000 }
+  );
 
   const login = async (email, password) => {
     const response = await authAPI.login(email, password);
@@ -52,9 +67,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    setUsuario(null);
-    setToken(null);
-    localStorage.removeItem('token');
+    limpiarSesion();
   };
 
   return (

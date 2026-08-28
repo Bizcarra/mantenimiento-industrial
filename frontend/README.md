@@ -1,58 +1,49 @@
-# Sistema de Gestión de Mantenimiento - Frontend
+# Frontend del sistema de mantenimiento
 
-React + Vite frontend para el sistema de gestión de solicitudes y tickets de mantenimiento industrial.
+Interfaz React y Vite del sistema de gestión de mantenimiento.
 
-## Instalación
+## Modo de ejecución
 
-```bash
+El frontend no se inicia por separado para el uso normal. Desde la raíz del repositorio se ejecuta:
+
+```text
+INICIAR_RED_LOCAL.cmd
+```
+
+Ese iniciador instala las dependencias, genera `frontend/dist` y hace que el backend publique la interfaz y la API desde la misma dirección de red local en el puerto 5050.
+
+Ejemplo:
+
+```text
+http://192.168.1.9:5050
+```
+
+De esta forma, los teléfonos y computadores conectados al mismo Wi-Fi utilizan una sola dirección y no requieren instalar el frontend.
+
+## Compilación manual para desarrollo
+
+```powershell
 npm install
-```
-
-## Ejecutar
-
-Desarrollo:
-```bash
-npm run dev
-```
-
-La app se abrirá en `http://localhost:3000`
-
-Producción:
-```bash
 npm run build
 ```
 
 ## Estructura
 
-```
+```text
 src/
-├── components/        # Componentes reutilizables (Navbar, ProtectedRoute)
-├── pages/            # Páginas principales (Login, Tickets, Dashboard, etc)
-├── context/          # Context API (AuthContext)
-├── services/         # APIs y servicios (axios client)
-├── App.jsx           # Componente principal con routing
-└── main.jsx          # Punto de entrada
+├── components/     Componentes reutilizables
+├── context/        Autenticación y estado compartido
+├── hooks/          Comportamiento reutilizable y actualización automática
+├── pages/          Login, tickets, usuarios y dashboard
+├── services/       Cliente de la API
+├── App.jsx         Rutas principales
+└── main.jsx        Punto de entrada
 ```
 
-## Flujo de autenticación
+## Funciones
 
-1. Usuario inicia sesión en `/login`
-2. Token JWT se almacena en localStorage
-3. Token se envía en cada request (interceptor de axios)
-4. ProtectedRoute verifica autenticación y rol requerido
-5. AuthContext maneja estado global de usuario
-
-## Roles
-
-- **Admin**: Acceso a dashboard y estadísticas
-- **Técnico**: Asignación de tickets y cambio de estados
-- **Solicitante**: Crear tickets y ver sus propios tickets
-
-## Features
-
-- ✅ Login con JWT
-- ✅ CRUD de tickets con filtros
-- ✅ Historial de cambios
-- ✅ Dashboard con estadísticas
-- ✅ Control de acceso por rol
-- ✅ Diseño responsivo
+- Autenticación con JWT.
+- Gestión de tickets y usuarios según el rol.
+- Historial, filtros por fecha y dashboard.
+- Actualización automática de los datos visibles.
+- Diseño adaptable para teléfono, tablet y computador.

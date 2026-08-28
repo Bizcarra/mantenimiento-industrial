@@ -1,6 +1,7 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { usuariosAPI } from '../services/api';
+import { useAutoRefresh } from '../hooks/useAutoRefresh';
 import styles from './Usuarios.module.css';
 
 const formularioInicial = {
@@ -35,29 +36,38 @@ export const Usuarios = () => {
   const [generandoEmail, setGenerandoEmail] = useState(false);
   const [emailPersonalizado, setEmailPersonalizado] = useState(false);
   const [ayudaEmail, setAyudaEmail] = useState('');
+  const [ultimaActualizacion, setUltimaActualizacion] = useState(null);
 
-  const cargarUsuarios = async () => {
+  const cargarUsuarios = useCallback(async ({ silencioso = false } = {}) => {
     try {
-      setCargando(true);
-      setError('');
+      if (!silencioso) {
+        setCargando(true);
+        setError('');
+      }
       const response = await usuariosAPI.listar({
         q: busqueda.trim() || undefined,
         rol: filtroRol || undefined,
         activo: filtroActivo || undefined,
       });
       setUsuarios(response.data);
+      setUltimaActualizacion(new Date());
     } catch (err) {
-      setError(err.response?.data?.mensaje || 'No fue posible cargar los usuarios');
+      if (!silencioso) {
+        setError(err.response?.data?.mensaje || 'No fue posible cargar los usuarios');
+      } else {
+        console.error('No fue posible actualizar los usuarios:', err);
+      }
     } finally {
-      setCargando(false);
+      if (!silencioso) setCargando(false);
     }
-  };
+  }, [busqueda, filtroActivo, filtroRol]);
 
   useEffect(() => {
     const temporizador = setTimeout(cargarUsuarios, 300);
     return () => clearTimeout(temporizador);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [busqueda, filtroRol, filtroActivo]);
+  }, [cargarUsuarios]);
+
+  useAutoRefresh(() => cargarUsuarios({ silencioso: true }));
 
   useEffect(() => {
     if (!modalAbierto || usuarioEditado || emailPersonalizado) return undefined;
@@ -210,6 +220,11 @@ export const Usuarios = () => {
           <h1>Gestión de usuarios</h1>
           <p className={styles.descripcion}>
             Busca, crea y administra los accesos al sistema de mantenimiento.
+          </p>
+          <p className={styles.actualizacion}>
+            <span aria-hidden="true" />
+            Actualización automática cada 10 segundos
+            {ultimaActualizacion && ` · ${ultimaActualizacion.toLocaleTimeString()}`}
           </p>
         </div>
         <button type="button" className={styles.botonPrimario} onClick={abrirNuevo}>
