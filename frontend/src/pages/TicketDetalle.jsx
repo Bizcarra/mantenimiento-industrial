@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { ticketsAPI } from '../services/api';
 import { ModalAsignarTecnico } from '../components/ModalAsignarTecnico';
+import { useAutoRefresh } from '../hooks/useAutoRefresh';
 import styles from './TicketDetalle.module.css';
 
 const etiquetasAccion = {
@@ -38,25 +39,57 @@ export const TicketDetalle = () => {
   const [nuevaPrioridad, setNuevaPrioridad] = useState('');
   const [solucion, setSolucion] = useState('');
   const [modalAbierto, setModalAbierto] = useState(false);
+  const [ultimaActualizacion, setUltimaActualizacion] = useState(null);
+  const ticketActualRef = useRef(null);
+  const estadoSeleccionadoRef = useRef('');
+  const prioridadSeleccionadaRef = useRef('');
+
+  const cargarDetalle = useCallback(async ({ silencioso = false } = {}) => {
+    try {
+      if (!silencioso) setCargando(true);
+      const response = await ticketsAPI.obtener(id);
+      const ticketNuevo = response.data.ticket;
+      const ticketAnterior = ticketActualRef.current;
+
+      if (
+        !silencioso ||
+        !ticketAnterior ||
+        estadoSeleccionadoRef.current === ticketAnterior.estado
+      ) {
+        estadoSeleccionadoRef.current = ticketNuevo.estado;
+        setNuevoEstado(ticketNuevo.estado);
+      }
+
+      if (
+        !silencioso ||
+        !ticketAnterior ||
+        prioridadSeleccionadaRef.current === ticketAnterior.prioridad
+      ) {
+        prioridadSeleccionadaRef.current = ticketNuevo.prioridad;
+        setNuevaPrioridad(ticketNuevo.prioridad);
+      }
+
+      ticketActualRef.current = ticketNuevo;
+      setTicket(ticketNuevo);
+      setHistorial(response.data.historial);
+      setUltimaActualizacion(new Date());
+    } catch (error) {
+      console.error('Error al cargar ticket:', error);
+      if (error.response?.status === 404) {
+        ticketActualRef.current = null;
+        setTicket(null);
+        setHistorial([]);
+      }
+    } finally {
+      if (!silencioso) setCargando(false);
+    }
+  }, [id]);
 
   useEffect(() => {
     cargarDetalle();
-  }, [id]);
+  }, [cargarDetalle]);
 
-  const cargarDetalle = async () => {
-    try {
-      setCargando(true);
-      const response = await ticketsAPI.obtener(id);
-      setTicket(response.data.ticket);
-      setHistorial(response.data.historial);
-      setNuevoEstado(response.data.ticket.estado);
-      setNuevaPrioridad(response.data.ticket.prioridad);
-    } catch (error) {
-      console.error('Error al cargar ticket:', error);
-    } finally {
-      setCargando(false);
-    }
-  };
+  useAutoRefresh(() => cargarDetalle({ silencioso: true }));
 
   const handleCambiarEstado = async () => {
     try {
@@ -138,6 +171,12 @@ export const TicketDetalle = () => {
         ← Volver
       </button>
 
+      <div className={styles.actualizacion}>
+        <span aria-hidden="true" />
+        Actualización automática cada 10 segundos
+        {ultimaActualizacion && ` · ${ultimaActualizacion.toLocaleTimeString()}`}
+      </div>
+
       <div className={styles.header}>
         <div className={styles.titulo}>
           <h1>{ticket.titulo}</h1>
@@ -182,7 +221,13 @@ export const TicketDetalle = () => {
           {puedeGestionar && (
             <div className={styles.controles}>
               <div className={styles.grupo}>
-                <select value={nuevoEstado} onChange={(e) => setNuevoEstado(e.target.value)}>
+                <select
+                  value={nuevoEstado}
+                  onChange={(e) => {
+                    estadoSeleccionadoRef.current = e.target.value;
+                    setNuevoEstado(e.target.value);
+                  }}
+                >
                   <option value="abierto">Abierto</option>
                   <option value="en_progreso">En Progreso</option>
                   <option value="pausado">Pausado</option>
@@ -203,7 +248,10 @@ export const TicketDetalle = () => {
                   <div className={styles.grupo}>
                     <select
                       value={nuevaPrioridad}
-                      onChange={(e) => setNuevaPrioridad(e.target.value)}
+                      onChange={(e) => {
+                        prioridadSeleccionadaRef.current = e.target.value;
+                        setNuevaPrioridad(e.target.value);
+                      }}
                     >
                       <option value="baja">Baja</option>
                       <option value="media">Media</option>

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { ticketsAPI } from '../services/api';
 import { FiltroFecha } from '../components/FiltroFecha';
+import { useAutoRefresh } from '../hooks/useAutoRefresh';
 import styles from './Tickets.module.css';
 
 export const Tickets = () => {
@@ -55,20 +56,9 @@ export const Tickets = () => {
 
   useEffect(() => {
     cargarTickets();
-
-    const actualizarSiVisible = () => {
-      if (!document.hidden) cargarTickets({ silencioso: true });
-    };
-    const temporizador = window.setInterval(actualizarSiVisible, 10000);
-    window.addEventListener('focus', actualizarSiVisible);
-    document.addEventListener('visibilitychange', actualizarSiVisible);
-
-    return () => {
-      window.clearInterval(temporizador);
-      window.removeEventListener('focus', actualizarSiVisible);
-      document.removeEventListener('visibilitychange', actualizarSiVisible);
-    };
   }, [cargarTickets]);
+
+  useAutoRefresh(() => cargarTickets({ silencioso: true }));
 
   const handleCrearTicket = async (e) => {
     e.preventDefault();

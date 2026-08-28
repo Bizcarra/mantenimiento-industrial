@@ -32,6 +32,24 @@
   color: #687083;
 }
 
+.actualizacion {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 9px 0 0;
+  color: #687083;
+  font-size: 12px;
+}
+
+.actualizacion span {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  background: #2eaf70;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px rgba(46, 175, 112, 0.14);
+}
+
 .botonPrimario,
 .botonSecundario {
   min-height: 44px;
