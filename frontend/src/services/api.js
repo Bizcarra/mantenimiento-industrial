@@ -54,6 +54,7 @@ export const ticketsAPI = {
     ...config,
     responseType: 'blob',
   }),
+  rotarFoto: (id, grados) => apiClient.patch(`/tickets/${id}/foto/rotar`, { grados }),
   asignar: (id, tecnicoAsignado) => apiClient.patch(`/tickets/${id}/asignar`, { tecnicoAsignado }),
   cambiarEstado: (id, nuevoEstado) => apiClient.patch(`/tickets/${id}/estado`, { nuevoEstado }),
   cambiarPrioridad: (id, nuevaPrioridad) => apiClient.patch(`/tickets/${id}/prioridad`, { nuevaPrioridad }),

@@ -33,7 +33,7 @@ La IP depende de la red Wi-Fi. El iniciador la detecta automáticamente, muestra
 ## Requisitos de la laptop servidor
 
 - Windows 10 u 11.
-- Node.js 16 o superior y npm.
+- Node.js 20.9 o superior y npm.
 - MongoDB instalado y ejecutándose, o una conexión configurada a MongoDB Atlas.
 - Git, si se desea descargar actualizaciones automáticamente.
 - Una red Wi-Fi privada.
@@ -118,9 +118,12 @@ Al crear un ticket se puede adjuntar una sola foto opcional. En celulares y tabl
 - Tamaño máximo: 5 MB.
 - Máximo: 40 megapíxeles.
 - La ubicación EXIF, comentarios y otros metadatos privados se eliminan antes de guardar.
+- La orientación EXIF se aplica físicamente antes de eliminar los metadatos, por lo que las fotos verticales conservan su posición correcta.
 - El contenido se valida realmente; no se confía solamente en la extensión del archivo.
 - La foto recibe un nombre aleatorio y una huella SHA-256 para comprobar su integridad.
 - Solo el administrador, el solicitante propietario y el técnico asignado pueden solicitarla con una sesión válida.
+
+Las evidencias antiguas que fueron guardadas sin orientación pueden corregirse con los botones **Girar izquierda** y **Girar derecha** disponibles en el detalle del ticket.
 
 Las fotos se almacenan en `backend/storage/ticket-images`, una carpeta privada que no se publica directamente ni se incluye en Git. Para una copia de seguridad completa deben respaldarse tanto MongoDB como `backend/storage`.
 

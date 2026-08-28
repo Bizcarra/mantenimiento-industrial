@@ -23,6 +23,21 @@ function Assert-CommandAvailable {
     }
 }
 
+function Assert-NodeVersion {
+    $minimumVersion = [Version]'20.9.0'
+    $versionText = (& node.exe -p "process.versions.node").Trim()
+    try {
+        $currentVersion = [Version]$versionText
+    }
+    catch {
+        throw "No se pudo comprobar la version de Node.js instalada: $versionText"
+    }
+
+    if ($currentVersion -lt $minimumVersion) {
+        throw "Node.js $minimumVersion o superior es requerido. Version instalada: $currentVersion"
+    }
+}
+
 function Invoke-CheckedCommand {
     param(
         [string]$Executable,
@@ -293,6 +308,7 @@ try {
     $Host.UI.RawUI.WindowTitle = 'Mantenimiento Industrial - Preparar red local'
     Write-Step 'Comprobando requisitos'
     Assert-CommandAvailable 'node.exe'
+    Assert-NodeVersion
     Assert-CommandAvailable 'npm.cmd'
     Assert-CommandAvailable 'curl.exe'
     New-LocalEnvironment

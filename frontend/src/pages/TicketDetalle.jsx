@@ -43,6 +43,7 @@ export const TicketDetalle = () => {
   const [fotoUrl, setFotoUrl] = useState('');
   const [cargandoFoto, setCargandoFoto] = useState(false);
   const [errorFoto, setErrorFoto] = useState('');
+  const [rotandoFoto, setRotandoFoto] = useState(false);
   const ticketActualRef = useRef(null);
   const estadoSeleccionadoRef = useRef('');
   const prioridadSeleccionadaRef = useRef('');
@@ -139,6 +140,20 @@ export const TicketDetalle = () => {
     }
   };
 
+  const handleRotarFoto = async (grados) => {
+    setRotandoFoto(true);
+    setErrorFoto('');
+    try {
+      await ticketsAPI.rotarFoto(id, grados);
+      await cargarDetalle();
+    } catch (error) {
+      console.error('Error al girar la foto:', error);
+      setErrorFoto(error.response?.data?.mensaje || 'No fue posible girar la foto.');
+    } finally {
+      setRotandoFoto(false);
+    }
+  };
+
   const handleCambiarPrioridad = async () => {
     try {
       await ticketsAPI.cambiarPrioridad(id, nuevaPrioridad);
@@ -200,8 +215,12 @@ export const TicketDetalle = () => {
   };
 
   const tecnicoAsignadoId = ticket.tecnicoAsignado?._id || ticket.tecnicoAsignado;
+  const solicitanteId = ticket.solicitante?._id || ticket.solicitante;
   const puedeGestionar = usuario?.rol === 'admin' ||
     (usuario?.rol === 'tecnico' && tecnicoAsignadoId === usuario?._id);
+  const puedeAjustarFoto = usuario?.rol === 'admin' ||
+    tecnicoAsignadoId === usuario?._id ||
+    solicitanteId === usuario?._id;
   const ultimoCambioEstado = historial.find((cambio) => cambio.tipoDeAccion === 'cambio_estado');
 
   return (
@@ -250,6 +269,24 @@ export const TicketDetalle = () => {
                 <a href={fotoUrl} target="_blank" rel="noreferrer">
                   <img src={fotoUrl} alt={`Evidencia del daño en ${ticket.numeroTicket}`} />
                 </a>
+              )}
+              {puedeAjustarFoto && (
+                <div className={styles.controlesFoto}>
+                  <button
+                    type="button"
+                    onClick={() => handleRotarFoto(270)}
+                    disabled={rotandoFoto}
+                  >
+                    ↶ Girar izquierda
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleRotarFoto(90)}
+                    disabled={rotandoFoto}
+                  >
+                    Girar derecha ↷
+                  </button>
+                </div>
               )}
               <small>Solo es visible para usuarios autorizados de este ticket.</small>
             </div>

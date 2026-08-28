@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import sharp from 'sharp';
 
 export const TAMANO_MAXIMO_FOTO = 5 * 1024 * 1024;
 export const DIMENSION_MAXIMA_FOTO = 12000;
@@ -160,65 +161,37 @@ const analizarJpeg = (buffer) => {
   return { extension: 'jpg', tipoMime: 'image/jpeg' };
 };
 
-const limpiarMetadatosJpeg = (buffer) => {
-  const partes = [buffer.subarray(0, 2)];
-  let offset = 2;
+const normalizarContenido = async (buffer, formato, operacion) => {
+  try {
+    let proceso = sharp(buffer, {
+      failOn: 'error',
+      limitInputPixels: PIXELES_MAXIMOS_FOTO,
+      sequentialRead: true,
+    });
 
-  while (offset + 4 <= buffer.length) {
-    const inicio = offset;
-    if (buffer[offset] !== 0xff) return buffer;
-    while (offset < buffer.length && buffer[offset] === 0xff) offset += 1;
+    proceso = operacion === 'auto-orientar'
+      ? proceso.autoOrient()
+      : proceso.rotate(operacion);
+    proceso = formato.extension === 'jpg'
+      ? proceso.jpeg({ quality: 88, chromaSubsampling: '4:2:0' })
+      : proceso.png({ compressionLevel: 9 });
 
-    const marcador = buffer[offset];
-    offset += 1;
-    if (marcador === 0xda) {
-      partes.push(buffer.subarray(inicio));
-      return Buffer.concat(partes);
+    const { data, info } = await proceso.toBuffer({ resolveWithObject: true });
+    validarDimensiones(info.width, info.height);
+    if (data.length > TAMANO_MAXIMO_FOTO) {
+      throw crearErrorPublico(
+        'La foto procesada supera 5 MB. Reduce su resolución e intenta nuevamente.',
+        413
+      );
     }
-    if (marcador === 0xd9) {
-      partes.push(buffer.subarray(inicio, offset));
-      return Buffer.concat(partes);
-    }
-    if (marcador === 0x01 || (marcador >= 0xd0 && marcador <= 0xd8)) {
-      partes.push(buffer.subarray(inicio, offset));
-      continue;
-    }
-    if (offset + 2 > buffer.length) return buffer;
-
-    const longitud = buffer.readUInt16BE(offset);
-    const fin = offset + longitud;
-    if (longitud < 2 || fin > buffer.length) return buffer;
-
-    // EXIF/XMP (APP1), IPTC (APP13) y comentarios pueden contener ubicación u otros datos.
-    if (![0xe1, 0xed, 0xfe].includes(marcador)) {
-      partes.push(buffer.subarray(inicio, fin));
-    }
-    offset = fin;
+    return data;
+  } catch (error) {
+    if (error.status && error.expose) throw error;
+    throw crearErrorPublico('No fue posible procesar la orientación de la foto');
   }
-
-  return buffer;
 };
 
-const limpiarMetadatosPng = (buffer) => {
-  const partes = [buffer.subarray(0, 8)];
-  const bloquesPrivados = new Set(['eXIf', 'iTXt', 'tEXt', 'zTXt', 'tIME']);
-  let offset = 8;
-
-  while (offset + 12 <= buffer.length) {
-    const longitud = buffer.readUInt32BE(offset);
-    const fin = offset + 12 + longitud;
-    if (fin > buffer.length) return buffer;
-
-    const tipo = buffer.toString('ascii', offset + 4, offset + 8);
-    if (!bloquesPrivados.has(tipo)) partes.push(buffer.subarray(offset, fin));
-    offset = fin;
-    if (tipo === 'IEND') break;
-  }
-
-  return Buffer.concat(partes);
-};
-
-export const validarYLimpiarImagen = (archivo) => {
+const detectarFormatoSeguro = (archivo) => {
   if (!archivo?.buffer || !Buffer.isBuffer(archivo.buffer) || archivo.buffer.length === 0) {
     throw crearErrorPublico('Selecciona una foto válida');
   }
@@ -234,15 +207,16 @@ export const validarYLimpiarImagen = (archivo) => {
     throw crearErrorPublico('El contenido de la foto no coincide con su tipo declarado');
   }
 
-  const contenido = formato.extension === 'jpg'
-    ? limpiarMetadatosJpeg(archivo.buffer)
-    : limpiarMetadatosPng(archivo.buffer);
+  return formato;
+};
 
+export const validarYLimpiarImagen = async (archivo) => {
+  const formato = detectarFormatoSeguro(archivo);
+  const contenido = await normalizarContenido(archivo.buffer, formato, 'auto-orientar');
   return { ...formato, contenido };
 };
 
-export const guardarEvidenciaTicket = async (archivo) => {
-  const imagen = validarYLimpiarImagen(archivo);
+const escribirEvidencia = async (imagen) => {
   const nombreArchivo = `${crypto.randomUUID()}.${imagen.extension}`;
   const rutaArchivo = path.join(directorioEvidencias, nombreArchivo);
 
@@ -256,6 +230,11 @@ export const guardarEvidenciaTicket = async (archivo) => {
     sha256: crypto.createHash('sha256').update(imagen.contenido).digest('hex'),
     fechaCarga: new Date(),
   };
+};
+
+export const guardarEvidenciaTicket = async (archivo) => {
+  const imagen = await validarYLimpiarImagen(archivo);
+  return escribirEvidencia(imagen);
 };
 
 const resolverRutaSegura = (nombreArchivo) => {
@@ -282,6 +261,19 @@ export const leerEvidenciaTicket = async (evidencia) => {
   }
 
   return contenido;
+};
+
+export const rotarEvidenciaTicket = async (evidencia, grados) => {
+  if (![90, 180, 270].includes(grados)) {
+    throw crearErrorPublico('La rotación solicitada no es válida');
+  }
+
+  const contenidoOriginal = await leerEvidenciaTicket(evidencia);
+  const formato = evidencia.tipoMime === 'image/png'
+    ? { extension: 'png', tipoMime: 'image/png' }
+    : { extension: 'jpg', tipoMime: 'image/jpeg' };
+  const contenido = await normalizarContenido(contenidoOriginal, formato, grados);
+  return escribirEvidencia({ ...formato, contenido });
 };
 
 export const eliminarEvidenciaTicket = async (evidencia) => {

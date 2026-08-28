@@ -6,7 +6,7 @@ La aplicación utiliza una laptop como servidor para que otros computadores y te
 
 En la laptop servidor instala:
 
-- Node.js 16 o superior.
+- Node.js 20.9 o superior.
 - MongoDB, o configura MongoDB Atlas en `backend/.env`.
 - Git para recibir actualizaciones del repositorio.
 

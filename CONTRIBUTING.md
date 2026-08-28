@@ -8,7 +8,7 @@ Esta guía te ayudará a contribuir al proyecto de manera efectiva.
 
 Antes de comenzar, asegúrate de tener instalado:
 
-- **Node.js** v16+ ([descargar](https://nodejs.org/))
+- **Node.js** v20.9+ ([descargar](https://nodejs.org/))
 - **npm** v8+
 - **MongoDB** local o en la nube ([descargar](https://www.mongodb.com/try/download/community))
 - **Git** ([descargar](https://git-scm.com/))

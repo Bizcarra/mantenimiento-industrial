@@ -10,6 +10,7 @@ import {
   eliminarEvidenciaTicket,
   guardarEvidenciaTicket,
   leerEvidenciaTicket,
+  rotarEvidenciaTicket,
 } from '../services/ticketImages.js';
 import {
   calcularFechaEliminacion,
@@ -168,6 +169,46 @@ router.get('/:id/foto', authMiddleware, async (req, res, next) => {
     });
     return res.send(contenido);
   } catch (error) {
+    next(error);
+  }
+});
+
+router.patch('/:id/foto/rotar', authMiddleware, async (req, res, next) => {
+  let evidenciaNueva = null;
+  try {
+    const grados = Number(req.body?.grados);
+    if (!idValido(req.params.id) || ![90, 180, 270].includes(grados)) {
+      return res.status(400).json({ mensaje: 'La rotación o el ticket no son válidos' });
+    }
+
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket || !esPropietarioOTecnico(req.usuario, ticket)) {
+      return res.status(404).json({ mensaje: 'Ticket no encontrado' });
+    }
+    if (!ticket.evidenciaFoto) {
+      return res.status(404).json({ mensaje: 'Este ticket no tiene una foto de evidencia' });
+    }
+
+    const evidenciaAnterior = ticket.evidenciaFoto.toObject();
+    evidenciaNueva = await rotarEvidenciaTicket(evidenciaAnterior, grados);
+    ticket.evidenciaFoto = evidenciaNueva;
+    await ticket.save();
+    evidenciaNueva = null;
+    await eliminarEvidenciaTicket(evidenciaAnterior).catch(() => {});
+
+    await HistoryLog.create({
+      ticket: ticket._id,
+      usuarioQueCambia: req.usuario.id,
+      tipoDeAccion: 'comentario',
+      detalles: `Foto de evidencia girada ${grados} grados`,
+      datosNuevos: { fotoGirada: grados },
+    }).catch((error) => {
+      console.error(`No se pudo registrar el giro de la foto: ${error.message}`);
+    });
+
+    return res.json({ mensaje: 'Foto girada correctamente', ticket });
+  } catch (error) {
+    if (evidenciaNueva) await eliminarEvidenciaTicket(evidenciaNueva).catch(() => {});
     next(error);
   }
 });

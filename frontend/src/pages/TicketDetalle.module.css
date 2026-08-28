@@ -151,6 +151,34 @@
   color: #b32631;
 }
 
+.controlesFoto {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.controlesFoto button {
+  min-height: 38px;
+  padding: 8px 12px;
+  color: #4253a5;
+  background: #fff;
+  border: 1px solid #cfd4eb;
+  border-radius: 5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.controlesFoto button:hover:not(:disabled) {
+  color: #fff;
+  background: #5969c4;
+  border-color: #5969c4;
+}
+
+.controlesFoto button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
 .metadata {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -457,5 +485,10 @@
   .botonEnviar {
     width: 100%;
     min-height: 44px;
+  }
+
+  .controlesFoto,
+  .controlesFoto button {
+    width: 100%;
   }
 }

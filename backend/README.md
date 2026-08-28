@@ -77,6 +77,7 @@ npm start
 - Autorización por rol, propietario y técnico asignado para evitar accesos por ID.
 - Fotos privadas JPG/PNG de hasta 5 MB, validadas por contenido y dimensiones.
 - Eliminación de metadatos sensibles y comprobación de integridad con SHA-256.
+- Aplicación automática de la orientación EXIF antes de retirar los metadatos.
 - Evidencias servidas solo desde un endpoint autenticado, nunca como archivos públicos.
 - Eliminación automática del ticket, historial y foto tres meses después de finalizarlo.
 - Errores públicos genéricos, sin trazas ni detalles de MongoDB.
@@ -109,6 +110,7 @@ npm test
 - `DELETE /api/tickets/:id` - Eliminar definitivamente ticket, historial y foto (admin)
 - `GET /api/tickets/:id` - Obtener ticket y su historial
 - `GET /api/tickets/:id/foto` - Obtener la foto con autenticación y autorización
+- `PATCH /api/tickets/:id/foto/rotar` - Girar una evidencia existente y renovar su huella
 - `PATCH /api/tickets/:id/asignar` - Asignar a técnico
 - `PATCH /api/tickets/:id/estado` - Cambiar estado
 - `PATCH /api/tickets/:id/prioridad` - Cambiar prioridad
